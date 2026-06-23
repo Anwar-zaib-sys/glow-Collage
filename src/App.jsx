@@ -18,7 +18,8 @@ import {
   Maximize,
   RotateCw,
   Sliders,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Clipboard
 } from 'lucide-react';
 import './App.css';
 
@@ -70,7 +71,7 @@ function App() {
   
   // Background configuration
   const [bgType, setBgType] = useState('preset'); // 'preset' | 'custom-solid' | 'custom-gradient'
-  const [bgPresetIndex, setBgPresetIndex] = useState(4); // Default to Sunset Glow
+  const [bgPresetIndex, setBgPresetIndex] = useState(0); // Default to Pure White
   const [customSolidBg, setCustomSolidBg] = useState('#1e293b');
   const [customGradA, setCustomGradA] = useState('#7c3aed');
   const [customGradB, setCustomGradB] = useState('#db2777');
@@ -82,21 +83,23 @@ function App() {
   const [slots, setSlots] = useState({});
   const [activeSlotIndex, setActiveSlotIndex] = useState(null);
 
-  // Text Overlays State
+  // Text Overlays State (Default styling customized to match the user's Gujjar Khan photo meme/heading)
   const [texts, setTexts] = useState([
     {
       id: 'txt-default-1',
-      text: 'SWEET ESCAPE',
+      text: 'Washing imam bargah\nTehsil Gujjar khan',
       x: 0.5,
-      y: 0.94,
-      fontSize: 48,
+      y: 0.15,
+      fontSize: 52,
       fontFamily: 'Montserrat',
-      color: '#ffffff',
-      backgroundColor: '#8b5cf6',
+      color: '#38bdf8', // Light sky blue
+      strokeColor: '#000000', // Black outline border
+      strokeWidth: 6, // Thick stroke
+      backgroundColor: 'transparent',
       bold: true,
       italic: false,
       shadow: true,
-      padding: 12,
+      padding: 10,
       borderRadius: 8,
       rotation: 0
     }
@@ -147,6 +150,31 @@ function App() {
     }
   }
 
+  // Handle Delete key for selected texts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (selectedTextId) {
+        // Ignore if user is editing inside a text input or textarea
+        if (
+          document.activeElement.tagName === 'INPUT' || 
+          document.activeElement.tagName === 'TEXTAREA' || 
+          document.activeElement.isContentEditable
+        ) {
+          return;
+        }
+        
+        if (e.key === 'Delete' || e.key === 'Backspace') {
+          e.preventDefault();
+          deleteSelectedText();
+          showToast('Text overlay deleted. 🗑️');
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedTextId, texts]);
+
   // Draw Canvas Helper
   const drawCanvasOnContext = (ctx, isExporting = false, scaleFactor = 1) => {
     const w = CANVAS_WIDTH * scaleFactor;
@@ -194,7 +222,7 @@ function App() {
         ctx.clip();
         
         // Cell Background
-        ctx.fillStyle = '#161922';
+        ctx.fillStyle = '#f8fafc'; // White/gray frame default
         ctx.fillRect(cellX, cellY, cWidth, cHeight);
         
         const slotState = slots[index];
@@ -229,7 +257,7 @@ function App() {
           // Empty slot placeholder (only draw if not exporting)
           if (!isExporting) {
             // Dashed Border
-            ctx.strokeStyle = (hoveredSlotIndex === index) ? '#8b5cf6' : 'rgba(255, 255, 255, 0.08)';
+            ctx.strokeStyle = (hoveredSlotIndex === index) ? '#8b5cf6' : 'rgba(0, 0, 0, 0.08)';
             ctx.lineWidth = 2 * scaleFactor;
             ctx.setLineDash([6 * scaleFactor, 6 * scaleFactor]);
             ctx.strokeRect(cellX + 4 * scaleFactor, cellY + 4 * scaleFactor, cWidth - 8 * scaleFactor, cHeight - 8 * scaleFactor);
@@ -238,7 +266,7 @@ function App() {
             // Plus Sign
             const cx = cellX + cWidth / 2;
             const cy = cellY + cHeight / 2;
-            ctx.strokeStyle = (hoveredSlotIndex === index) ? '#a78bfa' : 'rgba(255, 255, 255, 0.16)';
+            ctx.strokeStyle = (hoveredSlotIndex === index) ? '#8b5cf6' : 'rgba(0, 0, 0, 0.16)';
             ctx.lineWidth = 3 * scaleFactor;
             ctx.lineCap = 'round';
             ctx.beginPath();
@@ -249,10 +277,10 @@ function App() {
             ctx.stroke();
             
             // Text Label
-            ctx.fillStyle = (hoveredSlotIndex === index) ? '#a78bfa' : 'rgba(255, 255, 255, 0.35)';
+            ctx.fillStyle = (hoveredSlotIndex === index) ? '#8b5cf6' : 'rgba(0, 0, 0, 0.35)';
             ctx.font = `600 ${Math.max(11, 13 * scaleFactor)}px Outfit, Inter, sans-serif`;
             ctx.textAlign = 'center';
-            ctx.fillText('Drop or click here', cx, cy + 30 * scaleFactor);
+            ctx.fillText('Click to upload', cx, cy + 30 * scaleFactor);
           }
         }
         
@@ -306,13 +334,25 @@ function App() {
       
       // Drop Shadow
       if (txt.shadow) {
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
         ctx.shadowBlur = 8 * scaleFactor;
-        ctx.shadowOffsetX = 2 * scaleFactor;
-        ctx.shadowOffsetY = 2 * scaleFactor;
+        ctx.shadowOffsetX = 3 * scaleFactor;
+        ctx.shadowOffsetY = 3 * scaleFactor;
       }
       
-      // Draw lines
+      // Draw Stroke Outline (Meme & Heading styling like in the user's example photo)
+      const strokeW = txt.strokeWidth !== undefined ? txt.strokeWidth : 0;
+      if (strokeW > 0) {
+        ctx.strokeStyle = txt.strokeColor || '#000000';
+        ctx.lineWidth = strokeW * scaleFactor;
+        ctx.lineJoin = 'round';
+        lines.forEach((line, index) => {
+          const lineY = -blockHeight / 2 + index * lineHeight + lineHeight / 2;
+          ctx.strokeText(line, 0, lineY);
+        });
+      }
+
+      // Draw Fill Text
       ctx.fillStyle = txt.color;
       lines.forEach((line, index) => {
         const lineY = -blockHeight / 2 + index * lineHeight + lineHeight / 2;
@@ -517,18 +557,22 @@ function App() {
     // 3. Hit-Test Grid Cells
     for (let cell of computedCells) {
       if (mx >= cell.x && mx <= cell.x + cell.w && my >= cell.y && my <= cell.y + cell.h) {
-        setActiveSlotIndex(cell.index);
         setSelectedTextId(null);
-        setActiveTab('image');
         
         const slot = slots[cell.index];
         if (slot?.imageId) {
+          // Frame has a picture - select frame and start panning image
+          setActiveSlotIndex(cell.index);
+          setActiveTab('image');
           setIsDraggingImage(true);
           setDragStart({ x: mx, y: my });
           setImageStartOffset({
             dx: slot.xOffset || 0,
             dy: slot.yOffset || 0
           });
+        } else {
+          // Empty slot clicked - open image browser window instantly
+          triggerFileInput(cell.index);
         }
         return;
       }
@@ -626,7 +670,7 @@ function App() {
         const hList = [
           { x: -boxW / 2, y: -boxH / 2, cursor: 'nwse-resize' },
           { x: boxW / 2, y: -boxH / 2, cursor: 'nesw-resize' },
-          { x: -boxW / 2, y: boxH / 2, cursor: 'nesw-resize' },
+          { x: -boxW / 2, y: hFolder || boxH / 2, cursor: 'nesw-resize' }, // Fallback to standard
           { x: boxW / 2, y: boxH / 2, cursor: 'nwse-resize' }
         ];
 
@@ -747,8 +791,7 @@ function App() {
     // If cell clicked, open upload browser
     for (let cell of computedCells) {
       if (mx >= cell.x && mx <= cell.x + cell.w && my >= cell.y && my <= cell.y + cell.h) {
-        setActiveSlotIndex(cell.index);
-        fileInputRef.current.click();
+        triggerFileInput(cell.index);
         return;
       }
     }
@@ -866,13 +909,15 @@ function App() {
     const newId = `txt-${Date.now()}`;
     const newTxt = {
       id: newId,
-      text: 'Double Tap to Edit',
+      text: 'Heading Text',
       x: 0.5,
       y: 0.5,
-      fontSize: 38,
-      fontFamily: 'Outfit',
-      color: '#ffffff',
-      backgroundColor: 'rgba(18, 20, 28, 0.8)',
+      fontSize: 48,
+      fontFamily: 'Montserrat',
+      color: '#38bdf8', // Default to Gujjar Khan photo style
+      strokeColor: '#000000',
+      strokeWidth: 5,
+      backgroundColor: 'transparent',
       bold: true,
       italic: false,
       shadow: true,
@@ -1004,6 +1049,50 @@ function App() {
 
       showToast('Collage downloaded successfully! 🎉');
     }, 600);
+  };
+
+  // Copy collage binary image directly to Clipboard (for pasting into WhatsApp, Slack, etc.)
+  const handleCopyCollage = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    showToast('Copying collage to clipboard...');
+
+    try {
+      // Render to target export size canvas
+      const exportCanvas = document.createElement('canvas');
+      exportCanvas.width = CANVAS_WIDTH * exportResolution;
+      exportCanvas.height = canvasHeight * exportResolution;
+      const exportCtx = exportCanvas.getContext('2d');
+
+      drawCanvasOnContext(exportCtx, true, exportResolution);
+
+      exportCanvas.toBlob(async (blob) => {
+        if (!blob) {
+          showToast('Failed to copy collage.');
+          return;
+        }
+        try {
+          const item = new ClipboardItem({ 'image/png': blob });
+          await navigator.clipboard.write([item]);
+          
+          confetti({
+            particleCount: 80,
+            spread: 55,
+            origin: { y: 0.8 },
+            colors: ['#8b5cf6', '#db2777', '#10b981']
+          });
+          
+          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). 📋🎉');
+        } catch (err) {
+          console.error('Clipboard copy error:', err);
+          showToast('Failed to write to clipboard. Try downloading.');
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error('Image rendering error:', err);
+      showToast('Copy failed. Try using standard export.');
+    }
   };
 
   const showToast = (message) => {
@@ -1369,7 +1458,7 @@ function App() {
                   <div className="control-group">
                     <span className="control-label">Font Family</span>
                     <select 
-                      value={texts.find(t => t.id === selectedTextId)?.fontFamily || 'Outfit'}
+                      value={texts.find(t => t.id === selectedTextId)?.fontFamily || 'Montserrat'}
                       onChange={(e) => updateSelectedText('fontFamily', e.target.value)}
                     >
                       {AVAILABLE_FONTS.map(f => (
@@ -1404,6 +1493,36 @@ function App() {
                       value={texts.find(t => t.id === selectedTextId)?.rotation || 0}
                       onChange={(e) => updateSelectedText('rotation', parseInt(e.target.value))}
                     />
+                  </div>
+
+                  {/* Outline Text Styling section */}
+                  <div className="btn-group-2" style={{ paddingBottom: '4px' }}>
+                    <div className="control-group">
+                      <div className="control-label">
+                        <span>Outline Width</span>
+                        <span className="control-value">{texts.find(t => t.id === selectedTextId)?.strokeWidth || 0}px</span>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="15" 
+                        value={texts.find(t => t.id === selectedTextId)?.strokeWidth || 0}
+                        onChange={(e) => updateSelectedText('strokeWidth', parseInt(e.target.value))}
+                      />
+                    </div>
+                    
+                    <div className="control-group">
+                      <span className="control-label">Outline Color</span>
+                      <div className="custom-color-row">
+                        <input 
+                          type="color" 
+                          className="custom-color-input"
+                          style={{ width: '100%', height: '36px' }}
+                          value={texts.find(t => t.id === selectedTextId)?.strokeColor || '#000000'}
+                          onChange={(e) => updateSelectedText('strokeColor', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
 
                   <div className="btn-group-2">
@@ -1538,6 +1657,124 @@ function App() {
             onTouchEnd={handleMouseUp}
             onWheel={handleWheel}
           />
+
+          {/* Floating Cell Overlay Controller (inline zoom / fit steering toolbar) */}
+          {activeSlotIndex !== null && (
+            <div 
+              className="cell-overlay"
+              style={{
+                left: `${(computedCells[activeSlotIndex].x / CANVAS_WIDTH) * 100}%`,
+                top: `${(computedCells[activeSlotIndex].y / canvasHeight) * 100}%`,
+                width: `${(computedCells[activeSlotIndex].w / CANVAS_WIDTH) * 100}%`,
+                height: `${(computedCells[activeSlotIndex].h / canvasHeight) * 100}%`
+              }}
+            >
+              {slots[activeSlotIndex]?.imageId && (
+                <div className="cell-toolbar">
+                  {/* Zoom controls */}
+                  <button 
+                    className="cell-toolbar-btn zoom-out-btn"
+                    title="Zoom Out"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const nextScale = Math.max(0.2, (slots[activeSlotIndex].scale || 1.0) - 0.1);
+                      updateSlotControl('scale', nextScale);
+                    }}
+                  >
+                    -
+                  </button>
+                  <input 
+                    type="range"
+                    min="0.2"
+                    max="4.0"
+                    step="0.05"
+                    className="cell-toolbar-slider"
+                    value={slots[activeSlotIndex].scale || 1.0}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      updateSlotControl('scale', parseFloat(e.target.value));
+                    }}
+                  />
+                  <button 
+                    className="cell-toolbar-btn zoom-in-btn"
+                    title="Zoom In"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const nextScale = Math.min(4.0, (slots[activeSlotIndex].scale || 1.0) + 0.1);
+                      updateSlotControl('scale', nextScale);
+                    }}
+                  >
+                    +
+                  </button>
+                  
+                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
+
+                  {/* Fit / Fill buttons */}
+                  <button 
+                    className="cell-toolbar-btn text-btn" 
+                    title="Fit Image"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fitImage(activeSlotIndex);
+                    }}
+                  >
+                    Fit
+                  </button>
+                  <button 
+                    className="cell-toolbar-btn text-btn" 
+                    title="Fill Frame"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fillImage(activeSlotIndex);
+                    }}
+                  >
+                    Fill
+                  </button>
+
+                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
+
+                  {/* Rotate button */}
+                  <button 
+                    className="cell-toolbar-btn"
+                    title="Rotate 90°"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const nextRot = ((slots[activeSlotIndex].rotation || 0) + 90) % 360;
+                      updateSlotControl('rotation', nextRot);
+                    }}
+                  >
+                    <RotateCw size={12} />
+                  </button>
+
+                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
+
+                  {/* Delete button */}
+                  <button 
+                    className="cell-toolbar-btn clear-btn" 
+                    title="Delete Image"
+                    style={{ color: 'var(--danger)' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSlotImage(activeSlotIndex);
+                    }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Copy Collage to Clipboard and Export buttons */}
+        <div className="workspace-buttons animate-fade-in">
+          <button className="btn btn-secondary btn-copy" onClick={handleCopyCollage}>
+            <Clipboard size={16} /> Copy Collage to Clipboard
+          </button>
+          <button className="btn btn-primary btn-export" onClick={handleExport}>
+            <Download size={16} /> Export Collage
+          </button>
         </div>
 
         <div className="instruction-banner animate-fade-in">
@@ -1546,7 +1783,7 @@ function App() {
             {activeSlotIndex !== null ? (
               <b>Frame selected: Drag inside to pan picture, scroll wheel to zoom.</b>
             ) : selectedTextId !== null ? (
-              <b>Text selected: Drag to position, drag corner dots to resize font.</b>
+              <b>Text selected: Drag to position, drag corner dots to resize font, press Delete to remove.</b>
             ) : (
               "💡 Drag & drop pictures directly onto grids. Click frames/texts to configure them."
             )}

@@ -718,7 +718,102 @@ input:checked + .switch-toggle-slider:before {
   gap: 10px;
 }
 
-/* Responsive CSS */
+/* ============================================================
+   Theme Toggle Button (top-left corner of sidebar header)
+   ============================================================ */
+.theme-toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 4px;
+  margin-left: auto;          /* push to the right inside the header flex */
+  flex-shrink: 0;
+}
+
+.theme-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  transition: background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
+  color: var(--text-muted);
+  position: relative;
+}
+
+.theme-btn:hover {
+  background: var(--accent-light);
+  color: var(--accent-hover);
+  transform: scale(1.12);
+}
+
+.theme-btn.theme-btn--active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 0 10px var(--accent-glow);
+  transform: scale(1.08);
+}
+
+/* Smooth global theme transition */
+.app-container,
+.sidebar,
+.workspace,
+.canvas-wrapper,
+.sidebar-header,
+.sidebar-content,
+.sidebar-footer,
+.tab-btn,
+.btn,
+select,
+input[type="text"],
+.text-edit-textarea,
+.control-label,
+.section-title,
+.layout-card,
+.instruction-banner,
+.toast,
+.cell-toolbar {
+  transition:
+    background-color 0.35s ease,
+    border-color 0.35s ease,
+    color 0.35s ease,
+    box-shadow 0.35s ease;
+}
+
+/* Override logo-text gradient for light / solarized modes */
+[data-theme="light"] .logo-text,
+[data-theme="solarized"] .logo-text {
+  background: linear-gradient(135deg, var(--accent) 30%, var(--accent-hover) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Text style tab active state overrides for light themes */
+[data-theme="light"] .text-style-tab-btn.active,
+[data-theme="solarized"] .text-style-tab-btn.active {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Workspace dot-grid adapts to theme */
+[data-theme="light"] .workspace {
+  background-image: radial-gradient(rgba(15, 23, 42, 0.06) 1px, transparent 1px);
+}
+[data-theme="solarized"] .workspace {
+  background-image: radial-gradient(rgba(7, 54, 66, 0.08) 1px, transparent 1px);
+}
+
+/* ============================================================
+   Responsive CSS
+   ============================================================ */
 @media (max-width: 1024px) {
   .app-container {
     flex-direction: column-reverse;

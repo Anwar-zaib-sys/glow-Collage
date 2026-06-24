@@ -74,7 +74,24 @@ const GRADIENT_PRESETS = [
 
 const CANVAS_WIDTH = 1200; // Fixed width for editing resolution
 
+// Theme helpers
+const THEMES = [
+  { id: 'dark',      label: '🌙', title: 'Dark Mode' },
+  { id: 'solarized', label: '☀️', title: 'Solarized Mode' },
+  { id: 'light',     label: '🔆', title: 'Light Mode' }
+];
+
 function App() {
+  // ── Theme ──
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('gc-theme') || 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('gc-theme', theme);
+  }, [theme]);
+
   // Sidebar Tabs
   const [activeTab, setActiveTab] = useState('layout'); // 'layout' | 'design' | 'text' | 'image'
   const [textEditTab, setTextEditTab] = useState('TEXT'); // Sub-tab for Text overlay configurations: 'TEXT' | 'BACKGROUND' | 'BORDER'
@@ -1239,6 +1256,22 @@ function App() {
         <header className="sidebar-header">
           <Sparkles className="logo-icon" size={24} />
           <h1 className="logo-text">GlowCollage</h1>
+
+          {/* Theme Toggle */}
+          <div className="theme-toggle-group" role="group" aria-label="Color theme">
+            {THEMES.map((t) => (
+              <button
+                key={t.id}
+                id={`theme-btn-${t.id}`}
+                className={`theme-btn${theme === t.id ? ' theme-btn--active' : ''}`}
+                title={t.title}
+                aria-pressed={theme === t.id}
+                onClick={() => setTheme(t.id)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
         </header>
 
         {/* Tab Headers */}

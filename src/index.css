@@ -1,39 +1,116 @@
-:root {
+/* ============================================================
+   THEME SYSTEM — Dark (default) · Solarized · Light
+   ============================================================ */
+:root,
+[data-theme="dark"] {
   /* Color Palette - Premium Slate & Purple Accent */
   --bg-primary: #0b0c10;
   --bg-secondary: #12141c;
   --bg-tertiary: #1a1d29;
-  
+
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
   --text-muted: #64748b;
-  
+
   --accent: #8b5cf6;
   --accent-hover: #a78bfa;
   --accent-light: rgba(139, 92, 246, 0.15);
   --accent-glow: rgba(139, 92, 246, 0.45);
-  
+
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
-  
+
   --border-color: rgba(255, 255, 255, 0.08);
   --border-color-hover: rgba(255, 255, 255, 0.16);
   --border-accent: rgba(139, 92, 246, 0.3);
-  
-  /* Glassmorphism Styles */
+
   --glass-bg: rgba(18, 20, 28, 0.7);
   --glass-border: rgba(255, 255, 255, 0.08);
   --glass-blur: blur(16px);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 
-  /* Font Families */
   --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
-  
-  /* Transitions */
+
   --transition-fast: 0.15s ease;
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 0.5s ease;
+
+  color-scheme: dark;
+}
+
+/* ── Solarized Warm Theme ── */
+[data-theme="solarized"] {
+  --bg-primary: #fdf6e3;
+  --bg-secondary: #eee8d5;
+  --bg-tertiary: #e6dfc9;
+
+  --text-primary: #073642;
+  --text-secondary: #586e75;
+  --text-muted: #93a1a1;
+
+  --accent: #b58900;
+  --accent-hover: #cb9f0a;
+  --accent-light: rgba(181, 137, 0, 0.15);
+  --accent-glow: rgba(181, 137, 0, 0.4);
+
+  --success: #2aa198;
+  --danger: #dc322f;
+  --warning: #cb4b16;
+
+  --border-color: rgba(7, 54, 66, 0.12);
+  --border-color-hover: rgba(7, 54, 66, 0.24);
+  --border-accent: rgba(181, 137, 0, 0.35);
+
+  --glass-bg: rgba(238, 232, 213, 0.80);
+  --glass-border: rgba(7, 54, 66, 0.10);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(7, 54, 66, 0.15);
+
+  --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s ease;
+
+  color-scheme: light;
+}
+
+/* ── Light Theme ── */
+[data-theme="light"] {
+  --bg-primary: #f4f6fb;
+  --bg-secondary: #eaecf5;
+  --bg-tertiary: #dde1ef;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-light: rgba(124, 58, 237, 0.12);
+  --accent-glow: rgba(124, 58, 237, 0.4);
+
+  --success: #059669;
+  --danger: #dc2626;
+  --warning: #d97706;
+
+  --border-color: rgba(15, 23, 42, 0.10);
+  --border-color-hover: rgba(15, 23, 42, 0.20);
+  --border-accent: rgba(124, 58, 237, 0.30);
+
+  --glass-bg: rgba(234, 236, 245, 0.80);
+  --glass-border: rgba(15, 23, 42, 0.08);
+  --glass-blur: blur(16px);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.12);
+
+  --font-ui: 'Outfit', 'Inter', system-ui, sans-serif;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.5s ease;
+
+  color-scheme: light;
 }
 
 /* Global Reset */

@@ -92,6 +92,9 @@ function App() {
     localStorage.setItem('gc-theme', theme);
   }, [theme]);
 
+  // ── Export Resolution Panel ──
+  const [exportPanelOpen, setExportPanelOpen] = useState(false);
+
   // Sidebar Tabs
   const [activeTab, setActiveTab] = useState('layout'); // 'layout' | 'design' | 'text' | 'image'
   const [textEditTab, setTextEditTab] = useState('TEXT'); // Sub-tab for Text overlay configurations: 'TEXT' | 'BACKGROUND' | 'BORDER'
@@ -2064,32 +2067,6 @@ function App() {
 
         </div>
 
-        {/* Sidebar Footer (Export Panel) */}
-        <footer className="sidebar-footer">
-          <div className="control-group" style={{ marginBottom: '14px' }}>
-            <div className="control-label">
-              <span>Export Resolution</span>
-              <span className="control-value">{exportResolution}x ({CANVAS_WIDTH * exportResolution}px)</span>
-            </div>
-            <select 
-              value={exportResolution} 
-              onChange={(e) => setExportResolution(parseInt(e.target.value))}
-            >
-              <option value={1}>Standard Web (1x Quality)</option>
-              <option value={2}>High Definition (2x HD)</option>
-              <option value={3}>Print Quality (3x UHD)</option>
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn btn-secondary" onClick={handleClearAll} style={{ width: '48px', padding: '0' }} title="Reset Canvas">
-              <RefreshCw size={16} />
-            </button>
-            <button className="btn btn-primary" style={{ flex: 1 }} onClick={handleExport}>
-              <Download size={16} /> Export Collage
-            </button>
-          </div>
-        </footer>
       </aside>
 
       {/* Main Workspace (Canvas Viewer) */}
@@ -2253,6 +2230,86 @@ function App() {
           </span>
         </div>
       </main>
+      {/* ── Floating Export Resolution Panel (right-side drawer) ── */}
+      <div
+        id="export-resolution-panel"
+        className={`export-res-panel${exportPanelOpen ? ' export-res-panel--open' : ''}`}
+        aria-hidden={!exportPanelOpen}
+      >
+        {/* Toggle Tab */}
+        <button
+          id="export-res-toggle-btn"
+          className="export-res-tab"
+          title={exportPanelOpen ? 'Hide Export Settings' : 'Show Export Settings'}
+          onClick={() => setExportPanelOpen(v => !v)}
+          aria-expanded={exportPanelOpen}
+        >
+          <Sliders size={15} />
+          <span className="export-res-tab-label">
+            {exportPanelOpen ? 'Hide' : 'Export'}
+          </span>
+        </button>
+
+        {/* Panel Body */}
+        <div className="export-res-body">
+          <p className="export-res-title">
+            <Sliders size={14} /> Export Resolution
+          </p>
+
+          <div className="control-group">
+            <div className="control-label">
+              <span>Quality</span>
+              <span className="control-value">{exportResolution}x&nbsp;({CANVAS_WIDTH * exportResolution}px)</span>
+            </div>
+            <select
+              id="export-res-select"
+              value={exportResolution}
+              onChange={(e) => setExportResolution(parseInt(e.target.value))}
+            >
+              <option value={1}>Standard Web (1×)</option>
+              <option value={2}>High Definition (2× HD)</option>
+              <option value={3}>Print Quality (3× UHD)</option>
+            </select>
+          </div>
+
+          {/* Quality indicator pills */}
+          <div className="export-res-pills">
+            {[1, 2, 3].map(r => (
+              <button
+                key={r}
+                className={`export-res-pill${exportResolution === r ? ' active' : ''}`}
+                onClick={() => setExportResolution(r)}
+              >
+                {r === 1 ? '1× Web' : r === 2 ? '2× HD' : '3× UHD'}
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <hr className="export-res-divider" />
+
+          {/* Action Buttons */}
+          <div className="export-res-actions">
+            <button
+              id="export-reset-btn"
+              className="btn btn-secondary export-res-reset-btn"
+              onClick={handleClearAll}
+              title="Reset Canvas"
+            >
+              <RefreshCw size={15} /> Reset
+            </button>
+            <button
+              id="export-collage-btn"
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+              onClick={handleExport}
+            >
+              <Download size={15} /> Export Collage
+            </button>
+          </div>
+        </div>
+      </div>
+
     </div>
   );
 }

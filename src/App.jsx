@@ -32,7 +32,7 @@ const LAYOUT_PRESETS = [
   { id: '1x4', name: '1 × 4 Strip', cols: 1, rows: 4, type: 'strip-1x4', count: 4 }
 ];
 
-// Preset Background Colors & Gradients
+// Preset Background Colors & Gradients (Main Canvas Background)
 const BG_PRESETS = [
   { name: 'Pure White', value: '#ffffff', type: 'solid' },
   { name: 'Classic Black', value: '#111111', type: 'solid' },
@@ -56,11 +56,28 @@ const AVAILABLE_FONTS = [
   { name: 'Permanent Marker', family: 'Permanent Marker' }
 ];
 
+// Text Styling Color Presets (Solid Colors for Presets Swatches)
+const TEXT_COLOR_PRESETS = [
+  '#ffffff', '#e2e8f0', '#94a3b8', '#475569', '#0f172a',
+  '#ffebd6', '#fca5a5', '#f87171', '#ef4444', '#38bdf8', '#8b5cf6', '#10b981'
+];
+
+// Gradient presets for Text Fill, Background, and Border
+const GRADIENT_PRESETS = [
+  { name: 'Sunset Glow', colors: ['#f6d365', '#fda085'] },
+  { name: 'Blue Sky', colors: ['#ffffff', '#38bdf8'] },
+  { name: 'Ocean Wave', colors: ['#3b82f6', '#10b981'] },
+  { name: 'Cotton Candy', colors: ['#ff9a9e', '#fecfef'] },
+  { name: 'Purple Night', colors: ['#7c3aed', '#db2777'] },
+  { name: 'Lime Zest', colors: ['#a8ff78', '#78ffd6'] }
+];
+
 const CANVAS_WIDTH = 1200; // Fixed width for editing resolution
 
 function App() {
   // Sidebar Tabs
   const [activeTab, setActiveTab] = useState('layout'); // 'layout' | 'design' | 'text' | 'image'
+  const [textEditTab, setTextEditTab] = useState('TEXT'); // Sub-tab for Text overlay configurations: 'TEXT' | 'BACKGROUND' | 'BORDER'
 
   // Canvas States
   const [layout, setLayout] = useState('2x4');
@@ -92,15 +109,35 @@ function App() {
       y: 0.15,
       fontSize: 52,
       fontFamily: 'Montserrat',
-      color: '#38bdf8', // Light sky blue
-      strokeColor: '#000000', // Black outline border
-      strokeWidth: 6, // Thick stroke
-      backgroundColor: 'transparent',
       bold: true,
       italic: false,
       shadow: true,
-      padding: 10,
+      
+      // Text Fill settings
+      fillType: 'gradient', // 'color' | 'gradient'
+      color: '#ffffff',
+      colorGradA: '#ffffff',
+      colorGradB: '#38bdf8',
+      opacity: 100, // 0 to 100
+
+      // Text Background settings
+      bgEnabled: false,
+      bgType: 'color',
+      backgroundColor: '#000000',
+      bgGradA: '#7c3aed',
+      bgGradB: '#db2777',
+      bgOpacity: 80,
       borderRadius: 8,
+      padding: 10,
+
+      // Border settings
+      strokeWidth: 6, // Thick stroke
+      strokeType: 'color',
+      strokeColor: '#000000',
+      strokeGradA: '#000000',
+      strokeGradB: '#333333',
+      strokeOpacity: 100,
+
       rotation: 0
     }
   ]);
@@ -320,16 +357,37 @@ function App() {
       ctx.translate(tx, ty);
       ctx.rotate((txt.rotation * Math.PI) / 180);
       
+      // Global Text Opacity base
+      const textAlpha = (txt.opacity !== undefined ? txt.opacity : 100) / 100;
+      ctx.globalAlpha = textAlpha;
+
       // Draw background tag
-      if (txt.backgroundColor && txt.backgroundColor !== 'transparent') {
+      const bgEnabled = txt.bgEnabled !== undefined ? txt.bgEnabled : false;
+      if (bgEnabled) {
+        ctx.save();
+        const bgAlpha = (txt.bgOpacity !== undefined ? txt.bgOpacity : 80) / 100;
+        ctx.globalAlpha = bgAlpha * textAlpha; // Combine with main text opacity
+        
         const padAmount = (txt.padding || 10) * scaleFactor;
         const bRad = (txt.borderRadius || 8) * scaleFactor;
         const boxW = blockWidth + padAmount * 2;
         const boxH = blockHeight + padAmount * 2;
         
-        ctx.fillStyle = txt.backgroundColor;
+        // Background Color vs Gradient
+        let bgStyle;
+        if (txt.bgType === 'gradient') {
+          const grad = ctx.createLinearGradient(-boxW / 2, -boxH / 2, boxW / 2, boxH / 2);
+          grad.addColorStop(0, txt.bgGradA || '#7c3aed');
+          grad.addColorStop(1, txt.bgGradB || '#db2777');
+          bgStyle = grad;
+        } else {
+          bgStyle = txt.backgroundColor || '#000000';
+        }
+        
+        ctx.fillStyle = bgStyle;
         drawRoundedRectPath(ctx, -boxW / 2, -boxH / 2, boxW, boxH, bRad);
         ctx.fill();
+        ctx.restore();
       }
       
       // Drop Shadow
@@ -340,20 +398,49 @@ function App() {
         ctx.shadowOffsetY = 3 * scaleFactor;
       }
       
-      // Draw Stroke Outline (Meme & Heading styling like in the user's example photo)
+      // Text Fill style (solid Color vs Gradient)
+      let fillStyle;
+      if (txt.fillType === 'gradient') {
+        // Vertical gradient for text
+        const grad = ctx.createLinearGradient(0, -blockHeight / 2, 0, blockHeight / 2);
+        grad.addColorStop(0, txt.colorGradA || '#ffffff');
+        grad.addColorStop(1, txt.colorGradB || '#38bdf8');
+        fillStyle = grad;
+      } else {
+        fillStyle = txt.color || '#ffffff';
+      }
+
+      // Text stroke outline (Solid vs Gradient)
       const strokeW = txt.strokeWidth !== undefined ? txt.strokeWidth : 0;
+      let strokeStyle;
       if (strokeW > 0) {
-        ctx.strokeStyle = txt.strokeColor || '#000000';
+        if (txt.strokeType === 'gradient') {
+          const grad = ctx.createLinearGradient(0, -blockHeight / 2, 0, blockHeight / 2);
+          grad.addColorStop(0, txt.strokeGradA || '#000000');
+          grad.addColorStop(1, txt.strokeGradB || '#333333');
+          strokeStyle = grad;
+        } else {
+          strokeStyle = txt.strokeColor || '#000000';
+        }
+      }
+
+      // Draw Stroke Outline (drawn underneath fill)
+      if (strokeW > 0) {
+        ctx.save();
+        const strokeAlpha = (txt.strokeOpacity !== undefined ? txt.strokeOpacity : 100) / 100;
+        ctx.globalAlpha = strokeAlpha * textAlpha;
+        ctx.strokeStyle = strokeStyle;
         ctx.lineWidth = strokeW * scaleFactor;
         ctx.lineJoin = 'round';
         lines.forEach((line, index) => {
           const lineY = -blockHeight / 2 + index * lineHeight + lineHeight / 2;
           ctx.strokeText(line, 0, lineY);
         });
+        ctx.restore();
       }
 
       // Draw Fill Text
-      ctx.fillStyle = txt.color;
+      ctx.fillStyle = fillStyle;
       lines.forEach((line, index) => {
         const lineY = -blockHeight / 2 + index * lineHeight + lineHeight / 2;
         ctx.fillText(line, 0, lineY);
@@ -361,10 +448,12 @@ function App() {
       
       // Render text controls selection indicator (editor only)
       if (!isExporting && selectedTextId === txt.id) {
+        ctx.save();
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
+        ctx.globalAlpha = 1.0;
         
         const padAmount = (txt.padding || 10) * scaleFactor;
         const boxW = blockWidth + padAmount * 2;
@@ -393,6 +482,7 @@ function App() {
           ctx.fillRect(hPos.x - handleSize / 2, hPos.y - handleSize / 2, handleSize, handleSize);
           ctx.strokeRect(hPos.x - handleSize / 2, hPos.y - handleSize / 2, handleSize, handleSize);
         });
+        ctx.restore();
       }
       
       ctx.restore();
@@ -670,7 +760,7 @@ function App() {
         const hList = [
           { x: -boxW / 2, y: -boxH / 2, cursor: 'nwse-resize' },
           { x: boxW / 2, y: -boxH / 2, cursor: 'nesw-resize' },
-          { x: -boxW / 2, y: hFolder || boxH / 2, cursor: 'nesw-resize' }, // Fallback to standard
+          { x: -boxW / 2, y: boxH / 2, cursor: 'nesw-resize' },
           { x: boxW / 2, y: boxH / 2, cursor: 'nwse-resize' }
         ];
 
@@ -914,15 +1004,35 @@ function App() {
       y: 0.5,
       fontSize: 48,
       fontFamily: 'Montserrat',
-      color: '#38bdf8', // Default to Gujjar Khan photo style
-      strokeColor: '#000000',
-      strokeWidth: 5,
-      backgroundColor: 'transparent',
       bold: true,
       italic: false,
       shadow: true,
-      padding: 10,
+
+      // Fill settings
+      fillType: 'color',
+      color: '#ffffff',
+      colorGradA: '#ffffff',
+      colorGradB: '#38bdf8',
+      opacity: 100,
+
+      // Background settings
+      bgEnabled: false,
+      bgType: 'color',
+      backgroundColor: '#000000',
+      bgGradA: '#7c3aed',
+      bgGradB: '#db2777',
+      bgOpacity: 80,
       borderRadius: 8,
+      padding: 10,
+
+      // Border settings
+      strokeWidth: 4,
+      strokeType: 'color',
+      strokeColor: '#000000',
+      strokeGradA: '#000000',
+      strokeGradB: '#333333',
+      strokeOpacity: 100,
+
       rotation: 0
     };
     setTexts(prev => [...prev, newTxt]);
@@ -1101,6 +1211,8 @@ function App() {
       setToastMessage(null);
     }, 3000);
   };
+
+  const selectedText = selectedTextId ? texts.find(t => t.id === selectedTextId) : null;
 
   return (
     <div className="app-container">
@@ -1439,153 +1551,471 @@ function App() {
                 <Type size={14} /> Text Editor
               </h2>
 
-              <button className="btn btn-primary" onClick={addText} style={{ marginBottom: '15px' }}>
+              <button className="btn btn-primary" onClick={addText} style={{ marginBottom: '10px' }}>
                 <Plus size={16} /> Add Text Box
               </button>
 
-              {selectedTextId ? (
-                <div className="control-group" style={{ gap: '16px' }}>
+              {selectedTextId && selectedText ? (
+                <div className="control-group" style={{ gap: '14px' }}>
+                  
+                  {/* Basic Text Options */}
                   <div className="control-group">
                     <span className="control-label">Edit Text Content</span>
-                    <input 
-                      type="text" 
-                      value={texts.find(t => t.id === selectedTextId)?.text || ''}
+                    <textarea 
+                      rows="2"
+                      className="text-edit-textarea"
+                      value={selectedText.text}
                       onChange={(e) => updateSelectedText('text', e.target.value)}
                       placeholder="Type text overlay..."
                     />
                   </div>
 
-                  <div className="control-group">
-                    <span className="control-label">Font Family</span>
-                    <select 
-                      value={texts.find(t => t.id === selectedTextId)?.fontFamily || 'Montserrat'}
-                      onChange={(e) => updateSelectedText('fontFamily', e.target.value)}
-                    >
-                      {AVAILABLE_FONTS.map(f => (
-                        <option key={f.family} value={f.family}>{f.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="control-group">
-                    <div className="control-label">
-                      <span>Font Size</span>
-                      <span className="control-value">{texts.find(t => t.id === selectedTextId)?.fontSize || 36}px</span>
+                  <div className="btn-group-2">
+                    <div className="control-group">
+                      <span className="control-label">Font Family</span>
+                      <select 
+                        value={selectedText.fontFamily}
+                        onChange={(e) => updateSelectedText('fontFamily', e.target.value)}
+                      >
+                        {AVAILABLE_FONTS.map(f => (
+                          <option key={f.family} value={f.family}>{f.name}</option>
+                        ))}
+                      </select>
                     </div>
-                    <input 
-                      type="range" 
-                      min="12" 
-                      max="140" 
-                      value={texts.find(t => t.id === selectedTextId)?.fontSize || 36}
-                      onChange={(e) => updateSelectedText('fontSize', parseInt(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="control-group">
-                    <div className="control-label">
-                      <span>Rotation</span>
-                      <span className="control-value">{texts.find(t => t.id === selectedTextId)?.rotation || 0}°</span>
-                    </div>
-                    <input 
-                      type="range" 
-                      min="-180" 
-                      max="180" 
-                      value={texts.find(t => t.id === selectedTextId)?.rotation || 0}
-                      onChange={(e) => updateSelectedText('rotation', parseInt(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Outline Text Styling section */}
-                  <div className="btn-group-2" style={{ paddingBottom: '4px' }}>
                     <div className="control-group">
                       <div className="control-label">
-                        <span>Outline Width</span>
-                        <span className="control-value">{texts.find(t => t.id === selectedTextId)?.strokeWidth || 0}px</span>
+                        <span>Font Size</span>
+                        <span className="control-value">{selectedText.fontSize}px</span>
                       </div>
                       <input 
                         type="range" 
-                        min="0" 
-                        max="15" 
-                        value={texts.find(t => t.id === selectedTextId)?.strokeWidth || 0}
-                        onChange={(e) => updateSelectedText('strokeWidth', parseInt(e.target.value))}
+                        min="12" 
+                        max="140" 
+                        value={selectedText.fontSize}
+                        onChange={(e) => updateSelectedText('fontSize', parseInt(e.target.value))}
                       />
                     </div>
-                    
-                    <div className="control-group">
-                      <span className="control-label">Outline Color</span>
-                      <div className="custom-color-row">
+                  </div>
+
+                  {/* Sub-Tab Pill Selector (Text, Background, Border) exactly like in user's screenshots */}
+                  <div className="text-styling-tabs">
+                    <button 
+                      className={`text-style-tab-btn ${textEditTab === 'TEXT' ? 'active' : ''}`}
+                      onClick={() => setTextEditTab('TEXT')}
+                    >
+                      TEXT
+                    </button>
+                    <button 
+                      className={`text-style-tab-btn ${textEditTab === 'BACKGROUND' ? 'active' : ''}`}
+                      onClick={() => setTextEditTab('BACKGROUND')}
+                    >
+                      BACKGROUND
+                    </button>
+                    <button 
+                      className={`text-style-tab-btn ${textEditTab === 'BORDER' ? 'active' : ''}`}
+                      onClick={() => setTextEditTab('BORDER')}
+                    >
+                      BORDER
+                    </button>
+                  </div>
+
+                  {/* SUB-TAB 1: TEXT COLOR / GRADIENT & OPACITY */}
+                  {textEditTab === 'TEXT' && (
+                    <div className="animate-fade-in text-control-subpanel">
+                      <div className="control-label" style={{ marginBottom: '8px' }}>
+                        <span>Color Options</span>
+                        <div className="fill-type-toggle">
+                          <button 
+                            className={`toggle-sub-btn ${selectedText.fillType !== 'gradient' ? 'active' : ''}`}
+                            onClick={() => updateSelectedText('fillType', 'color')}
+                          >
+                            Solid
+                          </button>
+                          <button 
+                            className={`toggle-sub-btn ${selectedText.fillType === 'gradient' ? 'active' : ''}`}
+                            onClick={() => updateSelectedText('fillType', 'gradient')}
+                          >
+                            Gradient
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Presets Grid */}
+                      {selectedText.fillType !== 'gradient' ? (
+                        <>
+                          <div className="preset-swatches-row">
+                            {TEXT_COLOR_PRESETS.map((color) => (
+                              <button 
+                                key={color}
+                                className={`color-swatch-mini ${selectedText.color === color ? 'active' : ''}`}
+                                style={{ background: color }}
+                                onClick={() => updateSelectedText('color', color)}
+                              />
+                            ))}
+                          </div>
+                          <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                            <input 
+                              type="color" 
+                              className="custom-color-input"
+                              value={selectedText.color}
+                              onChange={(e) => updateSelectedText('color', e.target.value)}
+                            />
+                            <input 
+                              type="text" 
+                              value={selectedText.color.toUpperCase()}
+                              onChange={(e) => updateSelectedText('color', e.target.value)}
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="preset-swatches-row">
+                            {GRADIENT_PRESETS.map((grad, i) => (
+                              <button 
+                                key={i}
+                                title={grad.name}
+                                className={`color-swatch-mini ${selectedText.colorGradA === grad.colors[0] && selectedText.colorGradB === grad.colors[1] ? 'active' : ''}`}
+                                style={{ background: `linear-gradient(135deg, ${grad.colors[0]}, ${grad.colors[1]})` }}
+                                onClick={() => {
+                                  updateSelectedText('colorGradA', grad.colors[0]);
+                                  updateSelectedText('colorGradB', grad.colors[1]);
+                                }}
+                              />
+                            ))}
+                          </div>
+                          <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                            <input 
+                              type="color" 
+                              className="custom-color-input" 
+                              value={selectedText.colorGradA}
+                              onChange={(e) => updateSelectedText('colorGradA', e.target.value)}
+                            />
+                            <input 
+                              type="color" 
+                              className="custom-color-input" 
+                              value={selectedText.colorGradB}
+                              onChange={(e) => updateSelectedText('colorGradB', e.target.value)}
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      <div className="control-group" style={{ marginTop: '14px' }}>
+                        <div className="control-label">
+                          <span>Text Opacity</span>
+                          <span className="control-value">{selectedText.opacity || 100}%</span>
+                        </div>
                         <input 
-                          type="color" 
-                          className="custom-color-input"
-                          style={{ width: '100%', height: '36px' }}
-                          value={texts.find(t => t.id === selectedTextId)?.strokeColor || '#000000'}
-                          onChange={(e) => updateSelectedText('strokeColor', e.target.value)}
+                          type="range" 
+                          min="0" 
+                          max="100" 
+                          value={selectedText.opacity !== undefined ? selectedText.opacity : 100}
+                          onChange={(e) => updateSelectedText('opacity', parseInt(e.target.value))}
                         />
                       </div>
                     </div>
-                  </div>
+                  )}
 
+                  {/* SUB-TAB 2: BACKGROUND BOX OPTIONS */}
+                  {textEditTab === 'BACKGROUND' && (
+                    <div className="animate-fade-in text-control-subpanel">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <span className="control-label">Enable Tag Background</span>
+                        <label className="switch-toggle-label">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedText.bgEnabled}
+                            onChange={(e) => updateSelectedText('bgEnabled', e.target.checked)}
+                          />
+                          <span className="switch-toggle-slider"></span>
+                        </label>
+                      </div>
+
+                      {selectedText.bgEnabled && (
+                        <>
+                          <div className="control-label" style={{ marginBottom: '8px' }}>
+                            <span>Background Style</span>
+                            <div className="fill-type-toggle">
+                              <button 
+                                className={`toggle-sub-btn ${selectedText.bgType !== 'gradient' ? 'active' : ''}`}
+                                onClick={() => updateSelectedText('bgType', 'color')}
+                              >
+                                Solid
+                              </button>
+                              <button 
+                                className={`toggle-sub-btn ${selectedText.bgType === 'gradient' ? 'active' : ''}`}
+                                onClick={() => updateSelectedText('bgType', 'gradient')}
+                              >
+                                Gradient
+                              </button>
+                            </div>
+                          </div>
+
+                          {selectedText.bgType !== 'gradient' ? (
+                            <>
+                              <div className="preset-swatches-row">
+                                {TEXT_COLOR_PRESETS.map((color) => (
+                                  <button 
+                                    key={color}
+                                    className={`color-swatch-mini ${selectedText.backgroundColor === color ? 'active' : ''}`}
+                                    style={{ background: color }}
+                                    onClick={() => updateSelectedText('backgroundColor', color)}
+                                  />
+                                ))}
+                              </div>
+                              <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input"
+                                  value={selectedText.backgroundColor}
+                                  onChange={(e) => updateSelectedText('backgroundColor', e.target.value)}
+                                />
+                                <input 
+                                  type="text" 
+                                  value={selectedText.backgroundColor.toUpperCase()}
+                                  onChange={(e) => updateSelectedText('backgroundColor', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="preset-swatches-row">
+                                {GRADIENT_PRESETS.map((grad, i) => (
+                                  <button 
+                                    key={i}
+                                    title={grad.name}
+                                    className={`color-swatch-mini ${selectedText.bgGradA === grad.colors[0] && selectedText.bgGradB === grad.colors[1] ? 'active' : ''}`}
+                                    style={{ background: `linear-gradient(135deg, ${grad.colors[0]}, ${grad.colors[1]})` }}
+                                    onClick={() => {
+                                      updateSelectedText('bgGradA', grad.colors[0]);
+                                      updateSelectedText('bgGradB', grad.colors[1]);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input" 
+                                  value={selectedText.bgGradA}
+                                  onChange={(e) => updateSelectedText('bgGradA', e.target.value)}
+                                />
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input" 
+                                  value={selectedText.bgGradB}
+                                  onChange={(e) => updateSelectedText('bgGradB', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          <div className="control-group" style={{ marginTop: '14px' }}>
+                            <div className="control-label">
+                              <span>Background Opacity</span>
+                              <span className="control-value">{selectedText.bgOpacity}%</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="100" 
+                              value={selectedText.bgOpacity}
+                              onChange={(e) => updateSelectedText('bgOpacity', parseInt(e.target.value))}
+                            />
+                          </div>
+
+                          <div className="control-group">
+                            <div className="control-label">
+                              <span>Box Roundness</span>
+                              <span className="control-value">{selectedText.borderRadius}px</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="35" 
+                              value={selectedText.borderRadius}
+                              onChange={(e) => updateSelectedText('borderRadius', parseInt(e.target.value))}
+                            />
+                          </div>
+
+                          <div className="control-group">
+                            <div className="control-label">
+                              <span>Box Spacing (Padding)</span>
+                              <span className="control-value">{selectedText.padding}px</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="2" 
+                              max="30" 
+                              value={selectedText.padding}
+                              onChange={(e) => updateSelectedText('padding', parseInt(e.target.value))}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* SUB-TAB 3: BORDER (OUTLINE) OPTIONS */}
+                  {textEditTab === 'BORDER' && (
+                    <div className="animate-fade-in text-control-subpanel">
+                      <div className="control-group">
+                        <div className="control-label">
+                          <span>Outline Width (Stroke)</span>
+                          <span className="control-value">{selectedText.strokeWidth || 0}px</span>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0" 
+                          max="20" 
+                          value={selectedText.strokeWidth || 0}
+                          onChange={(e) => updateSelectedText('strokeWidth', parseInt(e.target.value))}
+                        />
+                      </div>
+
+                      {selectedText.strokeWidth > 0 && (
+                        <>
+                          <div className="control-label" style={{ marginBottom: '8px', marginTop: '10px' }}>
+                            <span>Outline Color Type</span>
+                            <div className="fill-type-toggle">
+                              <button 
+                                className={`toggle-sub-btn ${selectedText.strokeType !== 'gradient' ? 'active' : ''}`}
+                                onClick={() => updateSelectedText('strokeType', 'color')}
+                              >
+                                Solid
+                              </button>
+                              <button 
+                                className={`toggle-sub-btn ${selectedText.strokeType === 'gradient' ? 'active' : ''}`}
+                                onClick={() => updateSelectedText('strokeType', 'gradient')}
+                              >
+                                Gradient
+                              </button>
+                            </div>
+                          </div>
+
+                          {selectedText.strokeType !== 'gradient' ? (
+                            <>
+                              <div className="preset-swatches-row">
+                                {TEXT_COLOR_PRESETS.map((color) => (
+                                  <button 
+                                    key={color}
+                                    className={`color-swatch-mini ${selectedText.strokeColor === color ? 'active' : ''}`}
+                                    style={{ background: color }}
+                                    onClick={() => updateSelectedText('strokeColor', color)}
+                                  />
+                                ))}
+                              </div>
+                              <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input"
+                                  value={selectedText.strokeColor}
+                                  onChange={(e) => updateSelectedText('strokeColor', e.target.value)}
+                                />
+                                <input 
+                                  type="text" 
+                                  value={selectedText.strokeColor.toUpperCase()}
+                                  onChange={(e) => updateSelectedText('strokeColor', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="preset-swatches-row">
+                                {GRADIENT_PRESETS.map((grad, i) => (
+                                  <button 
+                                    key={i}
+                                    title={grad.name}
+                                    className={`color-swatch-mini ${selectedText.strokeGradA === grad.colors[0] && selectedText.strokeGradB === grad.colors[1] ? 'active' : ''}`}
+                                    style={{ background: `linear-gradient(135deg, ${grad.colors[0]}, ${grad.colors[1]})` }}
+                                    onClick={() => {
+                                      updateSelectedText('strokeGradA', grad.colors[0]);
+                                      updateSelectedText('strokeGradB', grad.colors[1]);
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="custom-color-row" style={{ marginTop: '10px' }}>
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input" 
+                                  value={selectedText.strokeGradA}
+                                  onChange={(e) => updateSelectedText('strokeGradA', e.target.value)}
+                                />
+                                <input 
+                                  type="color" 
+                                  className="custom-color-input" 
+                                  value={selectedText.strokeGradB}
+                                  onChange={(e) => updateSelectedText('strokeGradB', e.target.value)}
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          <div className="control-group" style={{ marginTop: '14px' }}>
+                            <div className="control-label">
+                              <span>Outline Opacity</span>
+                              <span className="control-value">{selectedText.strokeOpacity || 100}%</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0" 
+                              max="100" 
+                              value={selectedText.strokeOpacity !== undefined ? selectedText.strokeOpacity : 100}
+                              onChange={(e) => updateSelectedText('strokeOpacity', parseInt(e.target.value))}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  <hr style={{ borderColor: 'var(--border-color)', margin: '4px 0' }} />
+
+                  {/* Text General Alignment / Font style triggers */}
                   <div className="btn-group-2">
                     <div className="control-group">
-                      <span className="control-label">Text Color</span>
-                      <div className="custom-color-row">
-                        <input 
-                          type="color" 
-                          className="custom-color-input"
-                          style={{ width: '100%', height: '36px' }}
-                          value={texts.find(t => t.id === selectedTextId)?.color || '#ffffff'}
-                          onChange={(e) => updateSelectedText('color', e.target.value)}
-                        />
+                      <div className="control-label">
+                        <span>Text Rotation</span>
+                        <span className="control-value">{selectedText.rotation}°</span>
                       </div>
+                      <input 
+                        type="range" 
+                        min="-180" 
+                        max="180" 
+                        value={selectedText.rotation}
+                        onChange={(e) => updateSelectedText('rotation', parseInt(e.target.value))}
+                      />
                     </div>
-                    
-                    <div className="control-group">
-                      <span className="control-label">Tag Backing</span>
-                      <div className="custom-color-row">
-                        <input 
-                          type="color" 
-                          className="custom-color-input"
-                          style={{ width: '100%', height: '36px' }}
-                          value={texts.find(t => t.id === selectedTextId)?.backgroundColor === 'transparent' ? '#000000' : (texts.find(t => t.id === selectedTextId)?.backgroundColor || '#000000')}
-                          onChange={(e) => updateSelectedText('backgroundColor', e.target.value)}
-                        />
+
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button 
+                          className={`tab-btn ${selectedText.bold ? 'active' : ''}`}
+                          style={{ padding: '6px' }}
+                          onClick={() => updateSelectedText('bold', !selectedText.bold)}
+                        >
+                          <Bold size={14} /> B
+                        </button>
+                        <button 
+                          className={`tab-btn ${selectedText.italic ? 'active' : ''}`}
+                          style={{ padding: '6px' }}
+                          onClick={() => updateSelectedText('italic', !selectedText.italic)}
+                        >
+                          <Italic size={14} /> I
+                        </button>
                       </div>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', marginTop: '4px', cursor: 'pointer' }}>
-                        <input 
-                          type="checkbox" 
-                          checked={texts.find(t => t.id === selectedTextId)?.backgroundColor !== 'transparent'}
-                          onChange={(e) => updateSelectedText('backgroundColor', e.target.checked ? '#000000' : 'transparent')}
-                        />
-                        Enable Background
-                      </label>
+                      <button 
+                        className={`tab-btn ${selectedText.shadow ? 'active' : ''}`}
+                        style={{ padding: '6px', fontSize: '11px' }}
+                        onClick={() => updateSelectedText('shadow', !selectedText.shadow)}
+                      >
+                        Shadow
+                      </button>
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '5px' }}>
-                    <button 
-                      className={`tab-btn ${texts.find(t => t.id === selectedTextId)?.bold ? 'active' : ''}`}
-                      onClick={() => updateSelectedText('bold', !texts.find(t => t.id === selectedTextId)?.bold)}
-                      title="Toggle Bold"
-                    >
-                      <Bold size={15} /> Bold
-                    </button>
-                    <button 
-                      className={`tab-btn ${texts.find(t => t.id === selectedTextId)?.italic ? 'active' : ''}`}
-                      onClick={() => updateSelectedText('italic', !texts.find(t => t.id === selectedTextId)?.italic)}
-                      title="Toggle Italic"
-                    >
-                      <Italic size={15} /> Italic
-                    </button>
-                    <button 
-                      className={`tab-btn ${texts.find(t => t.id === selectedTextId)?.shadow ? 'active' : ''}`}
-                      onClick={() => updateSelectedText('shadow', !texts.find(t => t.id === selectedTextId)?.shadow)}
-                      title="Toggle Drop Shadow"
-                    >
-                      Shadow
-                    </button>
-                  </div>
-
-                  <button className="btn btn-danger" onClick={deleteSelectedText} style={{ marginTop: '10px' }}>
+                  <button className="btn btn-danger" onClick={deleteSelectedText} style={{ marginTop: '5px' }}>
                     <Trash2 size={16} /> Delete Text
                   </button>
                 </div>

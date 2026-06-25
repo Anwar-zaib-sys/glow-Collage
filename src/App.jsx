@@ -1303,10 +1303,23 @@ function App() {
                   value={cellAspectRatio} 
                   onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}
                 >
-                  <option value={1.0}>Square (1:1)</option>
-                  <option value={0.75}>Portrait (3:4)</option>
-                  <option value={0.67}>Tall Portrait (2:3)</option>
-                  <option value={1.33}>Landscape (4:3)</option>
+                  <optgroup label="── Square ──">
+                    <option value={1.0}>Square (1:1)</option>
+                  </optgroup>
+                  <optgroup label="── Portrait ──">
+                    <option value={0.8}>Portrait (4:5)  — Instagram</option>
+                    <option value={0.75}>Portrait (3:4)</option>
+                    <option value={0.67}>Tall Portrait (2:3)</option>
+                    <option value={0.5625}>Story / Reel (9:16)</option>
+                  </optgroup>
+                  <optgroup label="── Landscape ──">
+                    <option value={1.25}>Landscape (5:4)</option>
+                    <option value={1.33}>Landscape (4:3)</option>
+                    <option value={1.5}>Landscape (3:2)  — DSLR</option>
+                    <option value={1.7778}>Widescreen (16:9)  — HD</option>
+                    <option value={2.0}>Panorama (2:1)</option>
+                    <option value={2.3333}>Cinematic (21:9)  — Ultra-wide</option>
+                  </optgroup>
                 </select>
               </div>
             </div>

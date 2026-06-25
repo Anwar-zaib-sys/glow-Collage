@@ -26,10 +26,7 @@ import './App.css';
 // Preset Grid Layouts
 const LAYOUT_PRESETS = [
   { id: '2x2', name: '2 × 2 Grid', cols: 2, rows: 2, type: 'grid-2x2', count: 4 },
-  { id: '2x4', name: '2 × 4 Grid', cols: 2, rows: 4, type: 'grid-2x4', count: 8 },
-  { id: '2x6', name: '2 × 6 Grid', cols: 2, rows: 6, type: 'grid-2x6', count: 12 },
-  { id: '1x3', name: '1 × 3 Strip', cols: 1, rows: 3, type: 'strip-1x3', count: 3 },
-  { id: '1x4', name: '1 × 4 Strip', cols: 1, rows: 4, type: 'strip-1x4', count: 4 }
+  { id: '2x4', name: '2 × 4 Grid', cols: 2, rows: 4, type: 'grid-2x4', count: 8 }
 ];
 
 // Preset Background Colors & Gradients (Main Canvas Background)
@@ -120,47 +117,8 @@ function App() {
   const [slots, setSlots] = useState({});
   const [activeSlotIndex, setActiveSlotIndex] = useState(null);
 
-  // Text Overlays State (Default styling customized to match the user's Gujjar Khan photo meme/heading)
-  const [texts, setTexts] = useState([
-    {
-      id: 'txt-default-1',
-      text: 'Washing imam bargah\nTehsil Gujjar khan',
-      x: 0.5,
-      y: 0.15,
-      fontSize: 52,
-      fontFamily: 'Montserrat',
-      bold: true,
-      italic: false,
-      shadow: true,
-      
-      // Text Fill settings
-      fillType: 'gradient', // 'color' | 'gradient'
-      color: '#ffffff',
-      colorGradA: '#ffffff',
-      colorGradB: '#38bdf8',
-      opacity: 100, // 0 to 100
-
-      // Text Background settings
-      bgEnabled: false,
-      bgType: 'color',
-      backgroundColor: '#000000',
-      bgGradA: '#7c3aed',
-      bgGradB: '#db2777',
-      bgOpacity: 80,
-      borderRadius: 8,
-      padding: 10,
-
-      // Border settings
-      strokeWidth: 6, // Thick stroke
-      strokeType: 'color',
-      strokeColor: '#000000',
-      strokeGradA: '#000000',
-      strokeGradB: '#333333',
-      strokeOpacity: 100,
-
-      rotation: 0
-    }
-  ]);
+  // Text Overlays State
+  const [texts, setTexts] = useState([]);
   const [selectedTextId, setSelectedTextId] = useState(null);
 
   // Interaction / Drag-Pan-Zoom Tracker
@@ -2098,113 +2056,7 @@ function App() {
             onWheel={handleWheel}
           />
 
-          {/* Floating Cell Overlay Controller (inline zoom / fit steering toolbar) */}
-          {activeSlotIndex !== null && (
-            <div 
-              className="cell-overlay"
-              style={{
-                left: `${(computedCells[activeSlotIndex].x / CANVAS_WIDTH) * 100}%`,
-                top: `${(computedCells[activeSlotIndex].y / canvasHeight) * 100}%`,
-                width: `${(computedCells[activeSlotIndex].w / CANVAS_WIDTH) * 100}%`,
-                height: `${(computedCells[activeSlotIndex].h / canvasHeight) * 100}%`
-              }}
-            >
-              {slots[activeSlotIndex]?.imageId && (
-                <div className="cell-toolbar">
-                  {/* Zoom controls */}
-                  <button 
-                    className="cell-toolbar-btn zoom-out-btn"
-                    title="Zoom Out"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const nextScale = Math.max(0.2, (slots[activeSlotIndex].scale || 1.0) - 0.1);
-                      updateSlotControl('scale', nextScale);
-                    }}
-                  >
-                    -
-                  </button>
-                  <input 
-                    type="range"
-                    min="0.2"
-                    max="4.0"
-                    step="0.05"
-                    className="cell-toolbar-slider"
-                    value={slots[activeSlotIndex].scale || 1.0}
-                    onClick={(e) => e.stopPropagation()}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      updateSlotControl('scale', parseFloat(e.target.value));
-                    }}
-                  />
-                  <button 
-                    className="cell-toolbar-btn zoom-in-btn"
-                    title="Zoom In"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const nextScale = Math.min(4.0, (slots[activeSlotIndex].scale || 1.0) + 0.1);
-                      updateSlotControl('scale', nextScale);
-                    }}
-                  >
-                    +
-                  </button>
-                  
-                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
 
-                  {/* Fit / Fill buttons */}
-                  <button 
-                    className="cell-toolbar-btn text-btn" 
-                    title="Fit Image"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fitImage(activeSlotIndex);
-                    }}
-                  >
-                    Fit
-                  </button>
-                  <button 
-                    className="cell-toolbar-btn text-btn" 
-                    title="Fill Frame"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fillImage(activeSlotIndex);
-                    }}
-                  >
-                    Fill
-                  </button>
-
-                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
-
-                  {/* Rotate button */}
-                  <button 
-                    className="cell-toolbar-btn"
-                    title="Rotate 90°"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const nextRot = ((slots[activeSlotIndex].rotation || 0) + 90) % 360;
-                      updateSlotControl('rotation', nextRot);
-                    }}
-                  >
-                    <RotateCw size={12} />
-                  </button>
-
-                  <div className="divider" style={{ width: '1px', height: '16px', background: 'var(--border-color)', margin: '0 4px' }} />
-
-                  {/* Delete button */}
-                  <button 
-                    className="cell-toolbar-btn clear-btn" 
-                    title="Delete Image"
-                    style={{ color: 'var(--danger)' }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeSlotImage(activeSlotIndex);
-                    }}
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Copy Collage to Clipboard and Export buttons */}

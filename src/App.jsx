@@ -25,9 +25,17 @@ import './App.css';
 
 // Preset Grid Layouts
 const LAYOUT_PRESETS = [
-  { id: '2x2', name: '2 × 2 Grid', cols: 2, rows: 2, type: 'grid-2x2', count: 4 },
-  { id: '2x4', name: '2 × 4 Grid', cols: 2, rows: 4, type: 'grid-2x4', count: 8 }
+  // 2-column grids
+  { id: '2x3', name: '2 x 3 Grid',    cols: 2, rows: 3, type: 'grid-2x3', count: 6 },
+  { id: '2x4', name: '2 x 4 Grid',    cols: 2, rows: 4, type: 'grid-2x4', count: 8 },
+  { id: '2x5', name: '2 x 5 Grid',    cols: 2, rows: 5, type: 'grid-2x5', count: 10 },
+  // 3-column grids
+  { id: '3x3', name: '3 x 3 Grid',    cols: 3, rows: 3, type: 'grid-3x3', count: 9 },
+  { id: '3x4', name: '3 x 4 Grid',    cols: 3, rows: 4, type: 'grid-3x4', count: 12 },
+  // 4-column grids
+  { id: '4x3', name: '4 x 3 Grid',    cols: 4, rows: 3, type: 'grid-4x3', count: 12 },
 ];
+
 
 // Preset Background Colors & Gradients (Main Canvas Background)
 const BG_PRESETS = [
@@ -73,13 +81,13 @@ const CANVAS_WIDTH = 1200; // Fixed width for editing resolution
 
 // Theme helpers
 const THEMES = [
-  { id: 'dark',      label: '🌙', title: 'Dark Mode' },
+  { id: 'dark',      label: '🌙',  title: 'Dark Mode' },
   { id: 'solarized', label: '☀️', title: 'Solarized Mode' },
   { id: 'light',     label: '🔆', title: 'Light Mode' }
 ];
 
 function App() {
-  // ── Theme ──
+ // Theme 
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('gc-theme') || 'dark';
   });
@@ -89,7 +97,7 @@ function App() {
     localStorage.setItem('gc-theme', theme);
   }, [theme]);
 
-  // ── Export Resolution Panel ──
+ // Export Resolution Panel 
   const [exportPanelOpen, setExportPanelOpen] = useState(false);
 
   // Sidebar Tabs
@@ -181,7 +189,7 @@ function App() {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           deleteSelectedText();
-          showToast('Text overlay deleted. 🗑️');
+          showToast('Text overlay deleted. Ã°Å¸â€”â€˜Ã¯Â¸Â');
         }
       }
     };
@@ -1135,7 +1143,7 @@ function App() {
         colors: ['#8b5cf6', '#db2777', '#3b82f6', '#10b981']
       });
 
-      showToast('Collage downloaded successfully! 🎉');
+      showToast('Collage downloaded successfully! Ã°Å¸Å½â€°');
     }, 600);
   };
 
@@ -1171,7 +1179,7 @@ function App() {
             colors: ['#8b5cf6', '#db2777', '#10b981']
           });
           
-          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). 📋🎉');
+          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). Ã°Å¸â€œâ€¹Ã°Å¸Å½â€°');
         } catch (err) {
           console.error('Clipboard copy error:', err);
           showToast('Failed to write to clipboard. Try downloading.');
@@ -1303,22 +1311,22 @@ function App() {
                   value={cellAspectRatio} 
                   onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}
                 >
-                  <optgroup label="── Square ──">
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Square Ã¢â€â‚¬Ã¢â€â‚¬">
                     <option value={1.0}>Square (1:1)</option>
                   </optgroup>
-                  <optgroup label="── Portrait ──">
-                    <option value={0.8}>Portrait (4:5)  — Instagram</option>
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Portrait Ã¢â€â‚¬Ã¢â€â‚¬">
+                    <option value={0.8}>Portrait (4:5)  Ã¢â‚¬â€ Instagram</option>
                     <option value={0.75}>Portrait (3:4)</option>
                     <option value={0.67}>Tall Portrait (2:3)</option>
                     <option value={0.5625}>Story / Reel (9:16)</option>
                   </optgroup>
-                  <optgroup label="── Landscape ──">
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Landscape Ã¢â€â‚¬Ã¢â€â‚¬">
                     <option value={1.25}>Landscape (5:4)</option>
                     <option value={1.33}>Landscape (4:3)</option>
-                    <option value={1.5}>Landscape (3:2)  — DSLR</option>
-                    <option value={1.7778}>Widescreen (16:9)  — HD</option>
+                    <option value={1.5}>Landscape (3:2)  Ã¢â‚¬â€ DSLR</option>
+                    <option value={1.7778}>Widescreen (16:9)  Ã¢â‚¬â€ HD</option>
                     <option value={2.0}>Panorama (2:1)</option>
-                    <option value={2.3333}>Cinematic (21:9)  — Ultra-wide</option>
+                    <option value={2.3333}>Cinematic (21:9)  Ã¢â‚¬â€ Ultra-wide</option>
                   </optgroup>
                 </select>
               </div>
@@ -1497,7 +1505,7 @@ function App() {
                       <div className="control-group">
                         <div className="control-label">
                           <span>Image Rotation</span>
-                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}°</span>
+                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}Ã‚Â°</span>
                         </div>
                         <input 
                           type="range" 
@@ -1984,7 +1992,7 @@ function App() {
                     <div className="control-group">
                       <div className="control-label">
                         <span>Text Rotation</span>
-                        <span className="control-value">{selectedText.rotation}°</span>
+                        <span className="control-value">{selectedText.rotation}Ã‚Â°</span>
                       </div>
                       <input 
                         type="range" 
@@ -2090,12 +2098,12 @@ function App() {
             ) : selectedTextId !== null ? (
               <b>Text selected: Drag to position, drag corner dots to resize font, press Delete to remove.</b>
             ) : (
-              "💡 Drag & drop pictures directly onto grids. Click frames/texts to configure them."
+              "Ã°Å¸â€™Â¡ Drag & drop pictures directly onto grids. Click frames/texts to configure them."
             )}
           </span>
         </div>
       </main>
-      {/* ── Floating Export Resolution Panel (right-side drawer) ── */}
+      {/* Ã¢â€â‚¬Ã¢â€â‚¬ Floating Export Resolution Panel (right-side drawer) Ã¢â€â‚¬Ã¢â€â‚¬ */}
       <div
         id="export-resolution-panel"
         className={`export-res-panel${exportPanelOpen ? ' export-res-panel--open' : ''}`}
@@ -2131,9 +2139,9 @@ function App() {
               value={exportResolution}
               onChange={(e) => setExportResolution(parseInt(e.target.value))}
             >
-              <option value={1}>Standard Web (1×)</option>
-              <option value={2}>High Definition (2× HD)</option>
-              <option value={3}>Print Quality (3× UHD)</option>
+              <option value={1}>Standard Web (1Ãƒâ€”)</option>
+              <option value={2}>High Definition (2Ãƒâ€” HD)</option>
+              <option value={3}>Print Quality (3Ãƒâ€” UHD)</option>
             </select>
           </div>
 
@@ -2145,7 +2153,7 @@ function App() {
                 className={`export-res-pill${exportResolution === r ? ' active' : ''}`}
                 onClick={() => setExportResolution(r)}
               >
-                {r === 1 ? '1× Web' : r === 2 ? '2× HD' : '3× UHD'}
+                {r === 1 ? '1Ãƒâ€” Web' : r === 2 ? '2Ãƒâ€” HD' : '3Ãƒâ€” UHD'}
               </button>
             ))}
           </div>

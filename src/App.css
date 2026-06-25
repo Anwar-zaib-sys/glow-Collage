@@ -133,26 +133,26 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.layout-preview-icon.grid-2x2 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-}
-.layout-preview-icon.grid-2x4 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(4, 1fr);
-}
-.layout-preview-icon.grid-2x6 {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(6, 1fr);
-}
-.layout-preview-icon.strip-1x3 {
-  grid-template-columns: 1fr;
-  grid-template-rows: repeat(3, 1fr);
-}
-.layout-preview-icon.strip-1x4 {
-  grid-template-columns: 1fr;
-  grid-template-rows: repeat(4, 1fr);
-}
+/* ── Single column strips ── */
+.layout-preview-icon.strip-1x1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.layout-preview-icon.strip-1x2 { grid-template-columns: 1fr; grid-template-rows: repeat(2, 1fr); }
+.layout-preview-icon.strip-1x3 { grid-template-columns: 1fr; grid-template-rows: repeat(3, 1fr); }
+.layout-preview-icon.strip-1x4 { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+/* ── 2-column grids ── */
+.layout-preview-icon.grid-2x1 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.layout-preview-icon.grid-2x2 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); }
+.layout-preview-icon.grid-2x3 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+.layout-preview-icon.grid-2x4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(4, 1fr); }
+.layout-preview-icon.grid-2x5 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(5, 1fr); }
+/* ── 3-column grids ── */
+.layout-preview-icon.grid-3x1 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr; }
+.layout-preview-icon.grid-3x2 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.layout-preview-icon.grid-3x3 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
+.layout-preview-icon.grid-3x4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(4, 1fr); }
+/* ── 4-column grids ── */
+.layout-preview-icon.grid-4x1 { grid-template-columns: repeat(4, 1fr); grid-template-rows: 1fr; }
+.layout-preview-icon.grid-4x2 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); }
+.layout-preview-icon.grid-4x3 { grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(3, 1fr); }
 
 .layout-preview-cell {
   background: rgba(255, 255, 255, 0.15);

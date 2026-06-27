@@ -175,6 +175,92 @@
   color: var(--text-primary);
 }
 
+/* ── Custom Asymmetric Layout Preview Thumbnails ── */
+
+/* Base: shared .prev-cell block style */
+.prev-cell {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  transition: background var(--transition-fast);
+}
+
+.layout-card.active .prev-cell {
+  background: rgba(139, 92, 246, 0.5);
+}
+
+/* Flex helpers for building composite previews */
+.prev-row {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+}
+
+.prev-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Size modifier classes */
+.prev-big  { flex: 1.5; }   /* 60% wide or tall */
+.prev-tall { flex: 1; }     /* matches 2 stacked cells */
+.prev-wide { flex: none; height: 40%; width: 100%; } /* wide top cell */
+.prev-big-h { flex: 1.3; } /* slightly wider cell in a row */
+.prev-med-h { flex: 1; }   /* slightly narrower */
+.prev-col-2x2 { flex: 1.2; }
+
+/* ── Featured Left: big left, 2 stacked right ── */
+.prev-featured-left {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+
+/* ── Featured Right: 2 stacked left, big right ── */
+.prev-featured-right {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+
+/* ── Featured Top: wide top + 3 equal bottom ── */
+.prev-featured-top {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ── Magazine 5: 2 top + 3 bottom ── */
+.prev-magazine-5 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+/* ── Magazine 6: tall left + 2x2 right ── */
+.prev-magazine-6 {
+  display: flex;
+  flex-direction: row;
+  gap: 3px;
+}
+.prev-magazine-6 .prev-cell.prev-tall {
+  flex: 1;
+}
+
+/* ── Mosaic 7: big+med top, 3 mid, 2 bottom ── */
+.prev-mosaic-7 {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
 /* Aspect Ratio / Styling dropdowns & selectors */
 select, input[type="text"] {
   width: 100%;

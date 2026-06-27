@@ -36,6 +36,142 @@ const LAYOUT_PRESETS = [
   { id: '4x3', name: '4 x 3 Grid',    cols: 4, rows: 3, type: 'grid-4x3', count: 12 },
 ];
 
+// ─────────────────────────────────────────────────────────
+// CUSTOM ASYMMETRIC LAYOUTS
+// ─────────────────────────────────────────────────────────
+const CUSTOM_LAYOUTS = [
+  { id: 'featured-left',  name: 'Featured Left',  previewClass: 'prev-featured-left',  slots: 3 },
+  { id: 'featured-right', name: 'Featured Right', previewClass: 'prev-featured-right', slots: 3 },
+  { id: 'featured-top',   name: 'Featured Top',   previewClass: 'prev-featured-top',   slots: 4 },
+  { id: 'magazine-5',     name: 'Magazine 5',     previewClass: 'prev-magazine-5',     slots: 5 },
+  { id: 'magazine-6',     name: 'Magazine 6',     previewClass: 'prev-magazine-6',     slots: 6 },
+  { id: 'mosaic-7',       name: 'Mosaic 7',       previewClass: 'prev-mosaic-7',       slots: 7 },
+];
+
+/**
+ * Compute cell geometry for a given custom layout ID.
+ * Returns an array of { index, x, y, w, h } objects.
+ */
+const computeCustomGeo = (layoutId, pad, gp, W, aspectRatio = 1.0) => {
+  // Helper: row height from a column width
+  const rowH = (colW) => colW / aspectRatio;
+
+  // Available inner width/height
+  const innerW = W - 2 * pad;
+
+  switch (layoutId) {
+    case 'featured-left': {
+      // Left: 1 large cell spanning full height
+      // Right: 2 cells stacked vertically
+      const bigW = innerW * 0.6 - gp / 2;
+      const smW  = innerW * 0.4 - gp / 2;
+      const totalH = 2 * rowH(smW) + gp;
+      return [
+        { index: 0, x: pad,          y: pad,             w: bigW, h: totalH },
+        { index: 1, x: pad + bigW + gp, y: pad,          w: smW,  h: rowH(smW) },
+        { index: 2, x: pad + bigW + gp, y: pad + rowH(smW) + gp, w: smW, h: rowH(smW) },
+      ];
+    }
+
+    case 'featured-right': {
+      // Left: 2 cells stacked vertically
+      // Right: 1 large cell spanning full height
+      const smW  = innerW * 0.4 - gp / 2;
+      const bigW = innerW * 0.6 - gp / 2;
+      const totalH = 2 * rowH(smW) + gp;
+      return [
+        { index: 0, x: pad,            y: pad,            w: smW,  h: rowH(smW) },
+        { index: 1, x: pad,            y: pad + rowH(smW) + gp, w: smW, h: rowH(smW) },
+        { index: 2, x: pad + smW + gp, y: pad,            w: bigW, h: totalH },
+      ];
+    }
+
+    case 'featured-top': {
+      // Top: 1 wide cell spanning full width
+      // Bottom: 3 equal cells side by side
+      const topH  = rowH(innerW * 0.5);
+      const smW   = (innerW - 2 * gp) / 3;
+      const smH   = rowH(smW);
+      return [
+        { index: 0, x: pad,                    y: pad,              w: innerW, h: topH },
+        { index: 1, x: pad,                    y: pad + topH + gp,  w: smW,    h: smH },
+        { index: 2, x: pad + smW + gp,         y: pad + topH + gp,  w: smW,    h: smH },
+        { index: 3, x: pad + 2 * (smW + gp),  y: pad + topH + gp,  w: smW,    h: smH },
+      ];
+    }
+
+    case 'magazine-5': {
+      // Row 0: 2 equal cells
+      // Row 1: 3 equal cells
+      const w2 = (innerW - gp) / 2;
+      const h2 = rowH(w2);
+      const w3 = (innerW - 2 * gp) / 3;
+      const h3 = rowH(w3);
+      return [
+        { index: 0, x: pad,            y: pad,        w: w2, h: h2 },
+        { index: 1, x: pad + w2 + gp,  y: pad,        w: w2, h: h2 },
+        { index: 2, x: pad,            y: pad + h2 + gp, w: w3, h: h3 },
+        { index: 3, x: pad + w3 + gp,  y: pad + h2 + gp, w: w3, h: h3 },
+        { index: 4, x: pad + 2 * (w3 + gp), y: pad + h2 + gp, w: w3, h: h3 },
+      ];
+    }
+
+    case 'magazine-6': {
+      // Left column: 1 tall cell spanning 2 rows
+      // Right area: 2 rows × 2 cells each
+      const bigW = innerW * 0.45 - gp / 2;
+      const smW  = (innerW * 0.55 - gp * 1.5) / 2;
+      const smH  = rowH(smW);
+      const bigH = 2 * smH + gp;
+      return [
+        { index: 0, x: pad,                    y: pad,              w: bigW, h: bigH },
+        { index: 1, x: pad + bigW + gp,        y: pad,              w: smW,  h: smH },
+        { index: 2, x: pad + bigW + gp + smW + gp, y: pad,          w: smW,  h: smH },
+        { index: 3, x: pad + bigW + gp,        y: pad + smH + gp,   w: smW,  h: smH },
+        { index: 4, x: pad + bigW + gp + smW + gp, y: pad + smH + gp, w: smW, h: smH },
+        { index: 5, x: pad,                    y: pad + bigH + gp,  w: innerW, h: rowH(innerW * 0.4) },
+      ];
+    }
+
+    case 'mosaic-7': {
+      // Top row: 1 big + 1 medium
+      // Middle row: 3 equal
+      // Bottom row: 2 equal wide
+      const bigW   = innerW * 0.55 - gp / 2;
+      const medW   = innerW * 0.45 - gp / 2;
+      const bigH   = rowH(bigW * 0.85);
+      const w3     = (innerW - 2 * gp) / 3;
+      const h3     = rowH(w3);
+      const w2     = (innerW - gp) / 2;
+      const h2     = rowH(w2 * 0.8);
+      return [
+        { index: 0, x: pad,                   y: pad,              w: bigW, h: bigH },
+        { index: 1, x: pad + bigW + gp,       y: pad,              w: medW, h: bigH },
+        { index: 2, x: pad,                   y: pad + bigH + gp,  w: w3,   h: h3 },
+        { index: 3, x: pad + w3 + gp,         y: pad + bigH + gp,  w: w3,   h: h3 },
+        { index: 4, x: pad + 2 * (w3 + gp),  y: pad + bigH + gp,  w: w3,   h: h3 },
+        { index: 5, x: pad,                   y: pad + bigH + h3 + 2 * gp, w: w2, h: h2 },
+        { index: 6, x: pad + w2 + gp,         y: pad + bigH + h3 + 2 * gp, w: w2, h: h2 },
+      ];
+    }
+
+    default:
+      return [];
+  }
+};
+
+/**
+ * Compute the canvas height for a custom layout.
+ */
+const computeCustomCanvasHeight = (layoutId, pad, gp, W, aspectRatio) => {
+  const cells = computeCustomGeo(layoutId, pad, gp, W, aspectRatio);
+  if (!cells.length) return W; // fallback square
+  const maxBottom = cells.reduce((mx, c) => Math.max(mx, c.y + c.h), 0);
+  return Math.round(maxBottom + pad);
+};
+
+const CUSTOM_LAYOUT_IDS = CUSTOM_LAYOUTS.map(l => l.id);
+
 // Special Layout — fixed canvas dimensions + custom geometry
 // 8 photo slots (indices 0-7) arranged around a centre hero panel
 // Slot map:
@@ -238,39 +374,51 @@ function App() {
 
   // Layout configuration details
   const isSpecialLayout = layout === SPECIAL_LAYOUT_ID;
+  const isCustomLayout = CUSTOM_LAYOUT_IDS.includes(layout);
+  const isGridLayout = !isSpecialLayout && !isCustomLayout;
   const activeLayoutConfig = LAYOUT_PRESETS.find(l => l.id === layout) || LAYOUT_PRESETS[1];
-  const { cols, rows } = isSpecialLayout ? { cols: 3, rows: 3 } : activeLayoutConfig;
-  const maxSlots = isSpecialLayout ? 10 : cols * rows;
+  const { cols, rows } = isGridLayout ? activeLayoutConfig : { cols: 3, rows: 3 };
+
+  // Custom layout geometry
+  const customCells = isCustomLayout
+    ? computeCustomGeo(layout, padding, gap, CANVAS_WIDTH, cellAspectRatio)
+    : [];
+  const maxSlots = isSpecialLayout ? 10 : isCustomLayout ? customCells.length : cols * rows;
 
   // Special layout geometry (memoized on pad/gap change)
   const specialGeo = isSpecialLayout ? computeSpecialGeometry(padding, gap, cellAspectRatio) : null;
 
   // Compute cell dims & canvas height dynamically
-  const cellWidth = isSpecialLayout ? 0 : (CANVAS_WIDTH - 2 * padding - (cols - 1) * gap) / cols;
-  const cellHeight = isSpecialLayout ? 0 : cellWidth / cellAspectRatio;
+  const cellWidth = isGridLayout ? (CANVAS_WIDTH - 2 * padding - (cols - 1) * gap) / cols : 0;
+  const cellHeight = isGridLayout ? cellWidth / cellAspectRatio : 0;
   const canvasHeight = isSpecialLayout
     ? (specialGeo ? Math.round(specialGeo.topBannerH + 4 * specialGeo.rowH + 2 * padding + 4 * gap) : SPECIAL_CANVAS_H)
-    : Math.round(2 * padding + rows * cellHeight + (rows - 1) * gap);
+    : isCustomLayout
+      ? computeCustomCanvasHeight(layout, padding, gap, CANVAS_WIDTH, cellAspectRatio)
+      : Math.round(2 * padding + rows * cellHeight + (rows - 1) * gap);
 
   // Array of computed cells coordinates for rendering & hit testing
   const computedCells = isSpecialLayout
     ? (specialGeo ? specialGeo.cells : [])
-    : (() => {
-        const cells = [];
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const idx = r * cols + c;
-            cells.push({
-              index: idx,
-              x: padding + c * (cellWidth + gap),
-              y: padding + r * (cellHeight + gap),
-              w: cellWidth,
-              h: cellHeight
-            });
+    : isCustomLayout
+      ? customCells
+      : (() => {
+          const cells = [];
+          for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+              const idx = r * cols + c;
+              cells.push({
+                index: idx,
+                x: padding + c * (cellWidth + gap),
+                y: padding + r * (cellHeight + gap),
+                w: cellWidth,
+                h: cellHeight
+              });
+            }
           }
-        }
-        return cells;
-      })();
+          return cells;
+        })();
+
 
   // Handle Delete key for selected texts
   useEffect(() => {
@@ -305,8 +453,8 @@ function App() {
     const pad = padding * scaleFactor;
     const gp = gap * scaleFactor;
     const rad = borderRadius * scaleFactor;
-    const cWidth = isSpecialLayout ? 0 : (w - 2 * pad - (cols - 1) * gp) / cols;
-    const cHeight = isSpecialLayout ? 0 : cWidth / cellAspectRatio;
+    const cWidth = isGridLayout ? (w - 2 * pad - (cols - 1) * gp) / cols : 0;
+    const cHeight = isGridLayout ? cWidth / cellAspectRatio : 0;
 
     // 1. Draw Background
     let fillStyle;
@@ -723,7 +871,136 @@ function App() {
     // END SPECIAL LAYOUT BRANCH — continue with regular grid below
     // ─────────────────────────────────────────────────────────
 
+    // ─────────────────────────────────────────────────────────
+    // CUSTOM ASYMMETRIC LAYOUT BRANCH
+    // ─────────────────────────────────────────────────────────
+    if (isCustomLayout) {
+      const sf = scaleFactor;
+      const cells = computeCustomGeo(layout, pad, gp, w, cellAspectRatio);
+      const cellRad = borderRadius * sf;
+
+      cells.forEach(({ index: cellIdx, x: cellX, y: cellY, w: cw, h: ch }) => {
+        ctx.save();
+        drawRoundedRectPath(ctx, cellX, cellY, cw, ch, cellRad);
+        ctx.clip();
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(cellX, cellY, cw, ch);
+
+        const slotState = slots[cellIdx];
+        const imageInfo = slotState?.imageId ? uploadedImages[slotState.imageId] : null;
+
+        if (imageInfo && imageInfo.imgElement) {
+          const img = imageInfo.imgElement;
+          const coverScale = Math.max(cw / img.width, ch / img.height);
+          const finalScale = coverScale * (slotState.scale || 1.0);
+          const cx = cellX + cw / 2;
+          const cy = cellY + ch / 2;
+          ctx.save();
+          ctx.translate(cx + (slotState.xOffset || 0) * sf, cy + (slotState.yOffset || 0) * sf);
+          ctx.rotate(((slotState.rotation || 0) * Math.PI) / 180);
+          ctx.drawImage(img, -img.width * finalScale / 2, -img.height * finalScale / 2, img.width * finalScale, img.height * finalScale);
+          ctx.restore();
+        } else if (!isExporting) {
+          const isHov = hoveredSlotIndex === cellIdx;
+          ctx.strokeStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.08)';
+          ctx.lineWidth = 2 * sf;
+          ctx.setLineDash([6 * sf, 6 * sf]);
+          ctx.strokeRect(cellX + 4 * sf, cellY + 4 * sf, cw - 8 * sf, ch - 8 * sf);
+          ctx.setLineDash([]);
+          const cx = cellX + cw / 2;
+          const cy = cellY + ch / 2;
+          ctx.strokeStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.16)';
+          ctx.lineWidth = 3 * sf;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(cx - 14 * sf, cy); ctx.lineTo(cx + 14 * sf, cy);
+          ctx.moveTo(cx, cy - 14 * sf); ctx.lineTo(cx, cy + 14 * sf);
+          ctx.stroke();
+          ctx.fillStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.35)';
+          ctx.font = `600 ${Math.max(11, 13 * sf)}px Outfit, Inter, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('Click to upload', cx, cy + 30 * sf);
+        }
+        ctx.restore();
+
+        // Active slot highlight
+        if (!isExporting && activeSlotIndex === cellIdx) {
+          ctx.strokeStyle = '#8b5cf6';
+          ctx.lineWidth = 4 * sf;
+          ctx.strokeRect(cellX + 2 * sf, cellY + 2 * sf, cw - 4 * sf, ch - 4 * sf);
+        }
+      });
+
+      // Text overlays (same as regular layout)
+      texts.forEach((txt) => {
+        ctx.save();
+        const tx = txt.x * w;
+        const ty = txt.y * h;
+        const scaledFontSize = txt.fontSize * sf;
+        ctx.font = `${txt.bold ? 'bold ' : ''}${txt.italic ? 'italic ' : ''}${scaledFontSize}px "${txt.fontFamily}", Outfit, Inter, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const lines = txt.text.split('\n');
+        const lineHeight = scaledFontSize * 1.25;
+        let maxLineWidth = 0;
+        lines.forEach((line) => { const lw = ctx.measureText(line).width; if (lw > maxLineWidth) maxLineWidth = lw; });
+        const blockWidth = maxLineWidth;
+        const blockHeight = lines.length * lineHeight;
+        ctx.translate(tx, ty);
+        ctx.rotate((txt.rotation * Math.PI) / 180);
+        ctx.globalAlpha = (txt.opacity !== undefined ? txt.opacity : 100) / 100;
+        if (txt.bgEnabled) {
+          ctx.save();
+          const padAmt = (txt.padding || 10) * sf; const bRad = (txt.borderRadius || 8) * sf;
+          const boxW = blockWidth + padAmt * 2; const boxH = blockHeight + padAmt * 2;
+          ctx.globalAlpha = ((txt.bgOpacity || 80) / 100) * ((txt.opacity || 100) / 100);
+          ctx.fillStyle = txt.bgType === 'gradient'
+            ? (() => { const g = ctx.createLinearGradient(-boxW/2,-boxH/2,boxW/2,boxH/2); g.addColorStop(0,txt.bgGradA||'#7c3aed'); g.addColorStop(1,txt.bgGradB||'#db2777'); return g; })()
+            : (txt.backgroundColor || '#000000');
+          drawRoundedRectPath(ctx, -boxW/2, -boxH/2, boxW, boxH, bRad); ctx.fill();
+          ctx.restore();
+        }
+        if (txt.shadow) { ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=8*sf; ctx.shadowOffsetX=3*sf; ctx.shadowOffsetY=3*sf; }
+        const sw = txt.strokeWidth ?? 0;
+        if (sw > 0) {
+          ctx.save();
+          ctx.globalAlpha = ((txt.strokeOpacity??100)/100)*((txt.opacity??100)/100);
+          ctx.strokeStyle = txt.strokeType === 'gradient'
+            ? (() => { const g = ctx.createLinearGradient(0,-blockHeight/2,0,blockHeight/2); g.addColorStop(0,txt.strokeGradA||'#000'); g.addColorStop(1,txt.strokeGradB||'#333'); return g; })()
+            : (txt.strokeColor || '#000000');
+          ctx.lineWidth = sw * sf; ctx.lineJoin = 'round';
+          lines.forEach((line, i) => { ctx.strokeText(line, 0, -blockHeight/2+i*lineHeight+lineHeight/2); });
+          ctx.restore();
+        }
+        ctx.fillStyle = txt.fillType === 'gradient'
+          ? (() => { const g = ctx.createLinearGradient(0,-blockHeight/2,0,blockHeight/2); g.addColorStop(0,txt.colorGradA||'#fff'); g.addColorStop(1,txt.colorGradB||'#38bdf8'); return g; })()
+          : (txt.color || '#ffffff');
+        lines.forEach((line, i) => ctx.fillText(line, 0, -blockHeight/2+i*lineHeight+lineHeight/2));
+        if (!isExporting && selectedTextId === txt.id) {
+          ctx.save();
+          ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.globalAlpha=1;
+          const padAmt=(txt.padding||10)*sf; const boxW=blockWidth+padAmt*2; const boxH2=blockHeight+padAmt*2;
+          ctx.strokeStyle='#8b5cf6'; ctx.lineWidth=2*sf; ctx.setLineDash([5*sf,5*sf]);
+          ctx.strokeRect(-boxW/2,-boxH2/2,boxW,boxH2); ctx.setLineDash([]);
+          ctx.fillStyle='#ffffff'; ctx.strokeStyle='#8b5cf6'; ctx.lineWidth=2*sf;
+          const hs=8*sf;
+          [[-boxW/2,-boxH2/2],[boxW/2,-boxH2/2],[-boxW/2,boxH2/2],[boxW/2,boxH2/2]].forEach(([hx,hy]) => {
+            ctx.fillRect(hx-hs/2,hy-hs/2,hs,hs); ctx.strokeRect(hx-hs/2,hy-hs/2,hs,hs);
+          });
+          ctx.restore();
+        }
+        ctx.restore();
+      });
+
+      return; // custom layout done
+    }
+    // ─────────────────────────────────────────────────────────
+    // END CUSTOM LAYOUT BRANCH — continue with regular grid below
+    // ─────────────────────────────────────────────────────────
+
     // 2. Draw Image Cells
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const index = r * cols + c;
@@ -1795,9 +2072,131 @@ function App() {
                 ))}
               </div>
 
+              {/* ── Asymmetric Layouts ── */}
+              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
+                <LayoutGrid size={14} /> Asymmetric
+              </h2>
+              <div className="layout-presets">
+                {/* Featured Left: big left + 2 stacked right */}
+                <button
+                  id="layout-btn-featured-left"
+                  className={`layout-card ${layout === 'featured-left' ? 'active' : ''}`}
+                  onClick={() => { setLayout('featured-left'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-featured-left">
+                    <div className="prev-cell prev-big" />
+                    <div className="prev-col">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                  </div>
+                  <span>Featured Left</span>
+                </button>
+
+                {/* Featured Right: 2 stacked left + big right */}
+                <button
+                  id="layout-btn-featured-right"
+                  className={`layout-card ${layout === 'featured-right' ? 'active' : ''}`}
+                  onClick={() => { setLayout('featured-right'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-featured-right">
+                    <div className="prev-col">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                    <div className="prev-cell prev-big" />
+                  </div>
+                  <span>Featured Right</span>
+                </button>
+
+                {/* Featured Top: wide top + 3 bottom */}
+                <button
+                  id="layout-btn-featured-top"
+                  className={`layout-card ${layout === 'featured-top' ? 'active' : ''}`}
+                  onClick={() => { setLayout('featured-top'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-featured-top">
+                    <div className="prev-cell prev-wide" />
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                  </div>
+                  <span>Featured Top</span>
+                </button>
+
+                {/* Magazine 5: 2 top + 3 bottom */}
+                <button
+                  id="layout-btn-magazine-5"
+                  className={`layout-card ${layout === 'magazine-5' ? 'active' : ''}`}
+                  onClick={() => { setLayout('magazine-5'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-magazine-5">
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                  </div>
+                  <span>Magazine 5</span>
+                </button>
+
+                {/* Magazine 6: tall left + 2x2 right + wide bottom */}
+                <button
+                  id="layout-btn-magazine-6"
+                  className={`layout-card ${layout === 'magazine-6' ? 'active' : ''}`}
+                  onClick={() => { setLayout('magazine-6'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-magazine-6">
+                    <div className="prev-cell prev-tall" />
+                    <div className="prev-col prev-col-2x2">
+                      <div className="prev-row">
+                        <div className="prev-cell" />
+                        <div className="prev-cell" />
+                      </div>
+                      <div className="prev-row">
+                        <div className="prev-cell" />
+                        <div className="prev-cell" />
+                      </div>
+                    </div>
+                  </div>
+                  <span>Magazine 6</span>
+                </button>
+
+                {/* Mosaic 7: big+med top, 3 mid, 2 bottom */}
+                <button
+                  id="layout-btn-mosaic-7"
+                  className={`layout-card ${layout === 'mosaic-7' ? 'active' : ''}`}
+                  onClick={() => { setLayout('mosaic-7'); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-mosaic-7">
+                    <div className="prev-row">
+                      <div className="prev-cell prev-big-h" />
+                      <div className="prev-cell prev-med-h" />
+                    </div>
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                  </div>
+                  <span>Mosaic 7</span>
+                </button>
+              </div>
+
               {/* ── Special Category ── */}
               <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
                 <Sparkles size={14} /> Special
+
               </h2>
               <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
                 <button

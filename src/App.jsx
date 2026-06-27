@@ -172,7 +172,102 @@ const computeCustomCanvasHeight = (layoutId, pad, gp, W, aspectRatio) => {
 
 const CUSTOM_LAYOUT_IDS = CUSTOM_LAYOUTS.map(l => l.id);
 
-// Special Layout — fixed canvas dimensions + custom geometry
+// ─────────────────────────────────────────────────────────
+// CUSTOM LAYOUT BUILDER
+// ─────────────────────────────────────────────────────────
+const CUSTOM_BUILDER_ID = 'custom-builder';
+
+// Generate a full default grid for the builder
+const getBuilderDefaultCells = (rows, cols) => {
+  const cells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      cells.push({ row: r, col: c, rowSpan: 1, colSpan: 1 });
+    }
+  }
+  return cells;
+};
+
+// Compute canvas cell geometry from a builder def { rows, cols, cells }
+const buildCustomBuilderGeo = (def, pad, gp, W, aspectRatio = 1.0) => {
+  const { rows, cols } = def;
+  const activeCells = def.cells || getBuilderDefaultCells(rows, cols);
+  const colW = (W - 2 * pad - (cols - 1) * gp) / cols;
+  const rowH = colW / aspectRatio;
+  return activeCells.map((cell, i) => ({
+    index: i,
+    x: pad + cell.col * (colW + gp),
+    y: pad + cell.row * (rowH + gp),
+    w: cell.colSpan * colW + (cell.colSpan - 1) * gp,
+    h: cell.rowSpan * rowH + (cell.rowSpan - 1) * gp,
+  }));
+};
+
+// Canvas height for custom builder layout
+const buildCustomBuilderCanvasH = (def, pad, gp, W, aspectRatio) => {
+  const geo = buildCustomBuilderGeo(def, pad, gp, W, aspectRatio);
+  if (!geo.length) return W;
+  return Math.round(geo.reduce((mx, c) => Math.max(mx, c.y + c.h), 0) + pad);
+};
+
+// Occupancy matrix: matrix[r][c] = cell index (-1 if empty)
+const getBuilderMatrix = (def) => {
+  const { rows, cols } = def;
+  const cells = def.cells || getBuilderDefaultCells(rows, cols);
+  const matrix = Array.from({ length: rows }, () => Array(cols).fill(-1));
+  cells.forEach((cell, i) => {
+    for (let r2 = cell.row; r2 < cell.row + cell.rowSpan; r2++) {
+      for (let c2 = cell.col; c2 < cell.col + cell.colSpan; c2++) {
+        if (r2 < rows && c2 < cols) matrix[r2][c2] = i;
+      }
+    }
+  });
+  return { matrix, cells };
+};
+
+// Validate & merge selected cell indices into one merged cell. Returns new def or null if invalid.
+const mergeBuilderCells = (def, cellIndices) => {
+  if (cellIndices.size < 2) return null;
+  const cells = def.cells || getBuilderDefaultCells(def.rows, def.cols);
+  const selected = cells.filter((_, i) => cellIndices.has(i));
+  if (selected.length < 2) return null;
+
+  let minRow = Infinity, minCol = Infinity, maxRow = -Infinity, maxCol = -Infinity;
+  selected.forEach(c => {
+    minRow = Math.min(minRow, c.row);
+    minCol = Math.min(minCol, c.col);
+    maxRow = Math.max(maxRow, c.row + c.rowSpan - 1);
+    maxCol = Math.max(maxCol, c.col + c.colSpan - 1);
+  });
+
+  // All positions in bounding rect must be selected (no gaps allowed)
+  const { matrix } = getBuilderMatrix(def);
+  for (let r2 = minRow; r2 <= maxRow; r2++) {
+    for (let c2 = minCol; c2 <= maxCol; c2++) {
+      if ((matrix[r2]?.[c2]) === undefined || !cellIndices.has(matrix[r2][c2])) return null;
+    }
+  }
+
+  const remaining = cells.filter((_, i) => !cellIndices.has(i));
+  const merged = { row: minRow, col: minCol, rowSpan: maxRow - minRow + 1, colSpan: maxCol - minCol + 1 };
+  return { ...def, cells: [...remaining, merged] };
+};
+
+// Split a merged cell back into individual 1×1 cells. Returns new def or null if already 1×1.
+const splitBuilderCell = (def, cellIndex) => {
+  const cells = def.cells || getBuilderDefaultCells(def.rows, def.cols);
+  const cell = cells[cellIndex];
+  if (!cell || (cell.rowSpan <= 1 && cell.colSpan <= 1)) return null;
+  const splits = [];
+  for (let r2 = cell.row; r2 < cell.row + cell.rowSpan; r2++) {
+    for (let c2 = cell.col; c2 < cell.col + cell.colSpan; c2++) {
+      splits.push({ row: r2, col: c2, rowSpan: 1, colSpan: 1 });
+    }
+  }
+  return { ...def, cells: [...cells.filter((_, i) => i !== cellIndex), ...splits] };
+};
+
+
 // 8 photo slots (indices 0-7) arranged around a centre hero panel
 // Slot map:
 //   0  1  2        ← top row (3 photos)
@@ -368,6 +463,10 @@ function App() {
   const [toastMessage, setToastMessage] = useState(null);
   const [exportResolution, setExportResolution] = useState(2); // Export multiplier: 1x, 2x, 3x
 
+  // Custom Layout Builder state
+  const [customLayoutDef, setCustomLayoutDef] = useState({ rows: 3, cols: 3, cells: null });
+  const [selectedBuilderCells, setSelectedBuilderCells] = useState(new Set());
+
   // Refs
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -375,7 +474,8 @@ function App() {
   // Layout configuration details
   const isSpecialLayout = layout === SPECIAL_LAYOUT_ID;
   const isCustomLayout = CUSTOM_LAYOUT_IDS.includes(layout);
-  const isGridLayout = !isSpecialLayout && !isCustomLayout;
+  const isCustomBuilderLayout = layout === CUSTOM_BUILDER_ID;
+  const isGridLayout = !isSpecialLayout && !isCustomLayout && !isCustomBuilderLayout;
   const activeLayoutConfig = LAYOUT_PRESETS.find(l => l.id === layout) || LAYOUT_PRESETS[1];
   const { cols, rows } = isGridLayout ? activeLayoutConfig : { cols: 3, rows: 3 };
 
@@ -383,7 +483,14 @@ function App() {
   const customCells = isCustomLayout
     ? computeCustomGeo(layout, padding, gap, CANVAS_WIDTH, cellAspectRatio)
     : [];
-  const maxSlots = isSpecialLayout ? 10 : isCustomLayout ? customCells.length : cols * rows;
+  // Custom builder geometry
+  const builderCells = isCustomBuilderLayout
+    ? buildCustomBuilderGeo(customLayoutDef, padding, gap, CANVAS_WIDTH, cellAspectRatio)
+    : [];
+  const maxSlots = isSpecialLayout ? 10
+    : isCustomLayout ? customCells.length
+    : isCustomBuilderLayout ? builderCells.length
+    : cols * rows;
 
   // Special layout geometry (memoized on pad/gap change)
   const specialGeo = isSpecialLayout ? computeSpecialGeometry(padding, gap, cellAspectRatio) : null;
@@ -395,6 +502,8 @@ function App() {
     ? (specialGeo ? Math.round(specialGeo.topBannerH + 4 * specialGeo.rowH + 2 * padding + 4 * gap) : SPECIAL_CANVAS_H)
     : isCustomLayout
       ? computeCustomCanvasHeight(layout, padding, gap, CANVAS_WIDTH, cellAspectRatio)
+    : isCustomBuilderLayout
+      ? buildCustomBuilderCanvasH(customLayoutDef, padding, gap, CANVAS_WIDTH, cellAspectRatio)
       : Math.round(2 * padding + rows * cellHeight + (rows - 1) * gap);
 
   // Array of computed cells coordinates for rendering & hit testing
@@ -402,6 +511,8 @@ function App() {
     ? (specialGeo ? specialGeo.cells : [])
     : isCustomLayout
       ? customCells
+    : isCustomBuilderLayout
+      ? builderCells
       : (() => {
           const cells = [];
           for (let r = 0; r < rows; r++) {
@@ -871,12 +982,15 @@ function App() {
     // ─────────────────────────────────────────────────────────
 
     // ─────────────────────────────────────────────────────────
-    // CUSTOM ASYMMETRIC LAYOUT BRANCH
+    // CUSTOM ASYMMETRIC & BUILDER LAYOUT BRANCH
     // ─────────────────────────────────────────────────────────
-    if (isCustomLayout) {
+    if (isCustomLayout || isCustomBuilderLayout) {
       const sf = scaleFactor;
-      const cells = computeCustomGeo(layout, pad, gp, w, cellAspectRatio);
+      const cells = isCustomBuilderLayout
+        ? buildCustomBuilderGeo(customLayoutDef, pad, gp, w, cellAspectRatio)
+        : computeCustomGeo(layout, pad, gp, w, cellAspectRatio);
       const cellRad = borderRadius * sf;
+
 
       cells.forEach(({ index: cellIdx, x: cellX, y: cellY, w: cw, h: ch }) => {
         ctx.save();
@@ -1275,8 +1389,10 @@ function App() {
     selectedTextId, 
     activeSlotIndex, 
     canvasHeight,
-    hoveredSlotIndex
+    hoveredSlotIndex,
+    customLayoutDef
   ]);
+
 
   // Rounded rectangle helper path
   const drawRoundedRectPath = (ctx, x, y, w, h, radius) => {
@@ -2192,12 +2308,145 @@ function App() {
                 </button>
               </div>
 
+              {/* ── Custom Layout Builder ── */}
+              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
+                <Sliders size={14} /> Custom Builder
+              </h2>
+              <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
+                <button
+                  id="layout-btn-custom-builder"
+                  className={`layout-card layout-card--custom-btn ${layout === CUSTOM_BUILDER_ID ? 'active' : ''}`}
+                  onClick={() => { setLayout(CUSTOM_BUILDER_ID); setActiveSlotIndex(null); }}
+                >
+                  <div className="layout-preview-icon prev-custom-builder">
+                    <div className="prev-row" style={{ flex: 1.5 }}>
+                      <div className="prev-cell prev-big" />
+                      <div className="prev-col">
+                        <div className="prev-cell" />
+                        <div className="prev-cell" />
+                      </div>
+                    </div>
+                    <div className="prev-row">
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                      <div className="prev-cell" />
+                    </div>
+                  </div>
+                  <span>Design Your Own Layout</span>
+                </button>
+              </div>
+
+              {layout === CUSTOM_BUILDER_ID && (() => {
+                const { matrix, cells } = getBuilderMatrix(customLayoutDef);
+                const rendered = new Set();
+                const gridItems = [];
+                for (let r = 0; r < customLayoutDef.rows; r++) {
+                  for (let c = 0; c < customLayoutDef.cols; c++) {
+                    const cellIdx = matrix[r][c];
+                    if (cellIdx === -1 || rendered.has(cellIdx)) continue;
+                    rendered.add(cellIdx);
+                    const cell = cells[cellIdx];
+                    const isSel = selectedBuilderCells.has(cellIdx);
+                    const isMerged = cell.rowSpan > 1 || cell.colSpan > 1;
+                    gridItems.push(
+                      <div
+                        key={cellIdx}
+                        className={`cbl-cell${isSel ? ' selected' : ''}${isMerged ? ' merged' : ''}`}
+                        style={{
+                          gridColumn: `${cell.col + 1} / span ${cell.colSpan}`,
+                          gridRow: `${cell.row + 1} / span ${cell.rowSpan}`,
+                        }}
+                        onClick={() => {
+                          setSelectedBuilderCells(prev => {
+                            const next = new Set(prev);
+                            if (next.has(cellIdx)) next.delete(cellIdx); else next.add(cellIdx);
+                            return next;
+                          });
+                        }}
+                      >
+                        <span className="cbl-slot-num">{cellIdx + 1}</span>
+                        {isMerged && <span className="cbl-merged-badge">⊞</span>}
+                      </div>
+                    );
+                  }
+                }
+
+                return (
+                  <div className="custom-builder-panel animate-fade-in">
+                    {/* Row / Col pickers */}
+                    <div className="cbp-dims">
+                      <div className="cbp-dim-group">
+                        <span className="cbp-dim-label">Rows</span>
+                        <div className="cbp-dim-btns">
+                          {[1,2,3,4,5,6].map(n => (
+                            <button key={n}
+                              className={`cbp-dim-btn${customLayoutDef.rows === n ? ' active' : ''}`}
+                              onClick={() => { setCustomLayoutDef({ rows: n, cols: customLayoutDef.cols, cells: null }); setSelectedBuilderCells(new Set()); }}
+                            >{n}</button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="cbp-dim-group">
+                        <span className="cbp-dim-label">Columns</span>
+                        <div className="cbp-dim-btns">
+                          {[1,2,3,4,5,6].map(n => (
+                            <button key={n}
+                              className={`cbp-dim-btn${customLayoutDef.cols === n ? ' active' : ''}`}
+                              onClick={() => { setCustomLayoutDef({ rows: customLayoutDef.rows, cols: n, cells: null }); setSelectedBuilderCells(new Set()); }}
+                            >{n}</button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Visual grid editor */}
+                    <div className="cbp-grid-editor">
+                      <div className="cbl-grid" style={{
+                        gridTemplateColumns: `repeat(${customLayoutDef.cols}, 1fr)`,
+                        gridTemplateRows: `repeat(${customLayoutDef.rows}, 1fr)`,
+                      }}>
+                        {gridItems}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="cbp-actions">
+                      <button
+                        className="cbp-action-btn cbp-merge-btn"
+                        disabled={selectedBuilderCells.size < 2}
+                        onClick={() => {
+                          const newDef = mergeBuilderCells(customLayoutDef, selectedBuilderCells);
+                          if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
+                          else showToast('Select adjacent cells that form a complete rectangle to merge.');
+                        }}
+                      >⊞ Merge</button>
+                      <button
+                        className="cbp-action-btn cbp-split-btn"
+                        disabled={selectedBuilderCells.size !== 1}
+                        onClick={() => {
+                          const idx = Array.from(selectedBuilderCells)[0];
+                          const newDef = splitBuilderCell(customLayoutDef, idx);
+                          if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
+                          else showToast('Cell is already a single 1×1 slot.');
+                        }}
+                      >⊟ Split</button>
+                      <button
+                        className="cbp-action-btn cbp-reset-btn"
+                        onClick={() => { setCustomLayoutDef(d => ({ ...d, cells: null })); setSelectedBuilderCells(new Set()); }}
+                      >↺ Reset</button>
+                    </div>
+                    <p className="cbp-hint">Click cells to select · Select a rectangle then Merge · Click a merged cell then Split</p>
+                  </div>
+                );
+              })()}
+
               {/* ── Special Category ── */}
               <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
                 <Sparkles size={14} /> Special
 
               </h2>
               <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
+
                 <button
                   id="special-layout-btn"
                   className={`layout-card layout-card--special ${layout === SPECIAL_LAYOUT_ID ? 'active' : ''}`}

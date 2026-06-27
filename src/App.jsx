@@ -436,7 +436,6 @@ function App() {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           deleteSelectedText();
-          showToast('Text overlay deleted. Ã°Å¸â€”â€˜Ã¯Â¸Â');
           showToast('Text overlay deleted. 🗑️');
         }
       }
@@ -1912,7 +1911,7 @@ function App() {
         colors: ['#8b5cf6', '#db2777', '#3b82f6', '#10b981']
       });
 
-      showToast('Collage downloaded successfully! Ã°Å¸Å½â€°');
+      showToast('Collage downloaded successfully! 🎉');
     }, 600);
   };
 
@@ -1948,7 +1947,7 @@ function App() {
             colors: ['#8b5cf6', '#db2777', '#10b981']
           });
           
-          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). Ã°Å¸â€œâ€¹Ã°Å¸Å½â€°');
+          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). 📋 🎉');
         } catch (err) {
           console.error('Clipboard copy error:', err);
           showToast('Failed to write to clipboard. Try downloading.');
@@ -2482,7 +2481,7 @@ function App() {
                       <div className="control-group">
                         <div className="control-label">
                           <span>Image Rotation</span>
-                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}Ã‚Â°</span>
+                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}°</span>
                         </div>
                         <input 
                           type="range" 
@@ -2969,7 +2968,7 @@ function App() {
                     <div className="control-group">
                       <div className="control-label">
                         <span>Text Rotation</span>
-                        <span className="control-value">{selectedText.rotation}Ã‚Â°</span>
+                        <span className="control-value">{selectedText.rotation}°</span>
                       </div>
                       <input 
                         type="range" 
@@ -3075,12 +3074,12 @@ function App() {
             ) : selectedTextId !== null ? (
               <b>Text selected: Drag to position, drag corner dots to resize font, press Delete to remove.</b>
             ) : (
-              "Ã°Å¸â€™Â¡ Drag & drop pictures directly onto grids. Click frames/texts to configure them."
+              "💡 Drag & drop pictures directly onto grids. Click frames/texts to configure them."
             )}
           </span>
         </div>
       </main>
-      {/* Ã¢â€â‚¬Ã¢â€â‚¬ Floating Export Resolution Panel (right-side drawer) Ã¢â€â‚¬Ã¢â€â‚¬ */}
+      {/* --- Floating Export Resolution Panel (right-side drawer) --- */}
       <div
         id="export-resolution-panel"
         className={`export-res-panel${exportPanelOpen ? ' export-res-panel--open' : ''}`}
@@ -3116,9 +3115,9 @@ function App() {
               value={exportResolution}
               onChange={(e) => setExportResolution(parseInt(e.target.value))}
             >
-              <option value={1}>Standard Web (1Ãƒâ€”)</option>
-              <option value={2}>High Definition (2Ãƒâ€” HD)</option>
-              <option value={3}>Print Quality (3Ãƒâ€” UHD)</option>
+              <option value={1}>Standard Web (1×)</option>
+              <option value={2}>High Definition (2× HD)</option>
+              <option value={3}>Print Quality (3× UHD)</option>
             </select>
           </div>
 
@@ -3130,7 +3129,7 @@ function App() {
                 className={`export-res-pill${exportResolution === r ? ' active' : ''}`}
                 onClick={() => setExportResolution(r)}
               >
-                {r === 1 ? '1Ãƒâ€” Web' : r === 2 ? '2Ãƒâ€” HD' : '3Ãƒâ€” UHD'}
+                {r === 1 ? '1× Web' : r === 2 ? '2× HD' : '3× UHD'}
               </button>
             ))}
           </div>

@@ -36,6 +36,83 @@ const LAYOUT_PRESETS = [
   { id: '4x3', name: '4 x 3 Grid',    cols: 4, rows: 3, type: 'grid-4x3', count: 12 },
 ];
 
+// Special Layout — fixed canvas dimensions + custom geometry
+// 8 photo slots (indices 0-7) arranged around a centre hero panel
+// Slot map:
+//   0  1  2        ← top row (3 photos)
+//   3  [C]  4      ← middle row sides (center = hero card)
+//   5  6  7        ← bottom row (3 photos)
+// Text zones: topBanner, centerHeroTitle/subtitle/urdu, bottomLeft, bottomRight
+const SPECIAL_CANVAS_W = 1200;
+const SPECIAL_CANVAS_H = 960;
+
+// Compute geometry for the special layout given padding & gap
+const computeSpecialGeometry = (pad, gp, aspectRatio = 1.42) => {
+  const topBannerH = 75; // slightly taller for better text spacing
+  // 4 columns of equal width internally
+  // Total horizontal gaps: 3 gaps
+  const colW = (SPECIAL_CANVAS_W - 2 * pad - 3 * gp) / 4;
+  // Calculate row height dynamically based on cell aspect ratio
+  const rowH = colW / aspectRatio;
+
+  const y0 = pad; // top banner y
+  const y1 = y0 + topBannerH + gp; // Row 0 y
+  const y2 = y1 + rowH + gp;       // Row 1 y
+  const y3 = y2 + rowH + gp;       // Row 2 y
+  const y4 = y3 + rowH + gp;       // Row 3 (very bottom row) y
+
+  // Column x positions (4 equal columns)
+  const x0 = pad;
+  const x1 = x0 + colW + gp;
+  const x2 = x1 + colW + gp;
+  const x3 = x2 + colW + gp;
+
+  const centerW = colW * 2 + gp; // width spanning 2 center columns
+
+  // Hero nested photo card padding
+  const cardPad = 14;
+
+  const cleanCells = [
+    // Row 0: 4 slots
+    { index: 0, x: x0, y: y1, w: colW, h: rowH },
+    { index: 1, x: x1, y: y1, w: colW, h: rowH },
+    { index: 2, x: x2, y: y1, w: colW, h: rowH },
+    { index: 3, x: x3, y: y1, w: colW, h: rowH },
+
+    // Row 1: 2 slots (left & right side of Hero text)
+    { index: 4, x: x0, y: y2, w: colW, h: rowH },
+    { index: 5, x: x3, y: y2, w: colW, h: rowH },
+
+    // Row 2: 3 slots: left, hero building photo, right
+    { index: 6, x: x0, y: y3, w: colW, h: rowH },
+    { 
+      index: 8, 
+      x: x1 + cardPad, 
+      y: y3 + cardPad / 2, 
+      w: centerW - cardPad * 2, 
+      h: rowH - cardPad * 1.5 
+    },
+    { index: 7, x: x3, y: y3, w: colW, h: rowH },
+
+    // Row 3: 1 slot in the center (tractor photo)
+    { index: 9, x: x1, y: y4, w: centerW, h: rowH }
+  ];
+
+  // Hero card container (covers Row 1 & Row 2 center, i.e., height rowH * 2 + gp)
+  const hero = { x: x1, y: y2, w: centerW, h: rowH * 2 + gp };
+  
+  // Top banner
+  const banner = { x: pad, y: y0, w: SPECIAL_CANVAS_W - 2 * pad, h: topBannerH };
+  
+  // Bottom text zones (in Row 3)
+  const botLeft  = { x: x0, y: y4, w: colW, h: rowH };
+  const botRight = { x: x3, y: y4, w: colW, h: rowH };
+
+  return { cells: cleanCells, hero, banner, botLeft, botRight, rowH, topBannerH, yBot: y4 };
+};
+
+const SPECIAL_LAYOUT_ID = 'special-collage';
+
 
 // Preset Background Colors & Gradients (Main Canvas Background)
 const BG_PRESETS = [
@@ -129,6 +206,16 @@ function App() {
   const [texts, setTexts] = useState([]);
   const [selectedTextId, setSelectedTextId] = useState(null);
 
+  // Special layout built-in text zones
+  const [specialTexts, setSpecialTexts] = useState({
+    banner:   'Your City Name, District / Region',
+    heroTitle: 'CITY NAME',
+    heroSub:   'CLEAN CITY • GREEN CITY • HEALTHY CITY',
+    heroUrdu:  'میرا شہر، میری ذمہ داری',
+    bottomLeft: 'WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning\n✓ Waste Collection & Disposal\n✓ Efficient Waste Management\n✓ Chlorine Spraying\n✓ Ditch & Verge Cleaning',
+    bottomRight: 'میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN',
+  });
+
   // Interaction / Drag-Pan-Zoom Tracker
   const [isDraggingImage, setIsDraggingImage] = useState(false);
   const [isDraggingText, setIsDraggingText] = useState(false);
@@ -150,28 +237,40 @@ function App() {
   const fileInputRef = useRef(null);
 
   // Layout configuration details
+  const isSpecialLayout = layout === SPECIAL_LAYOUT_ID;
   const activeLayoutConfig = LAYOUT_PRESETS.find(l => l.id === layout) || LAYOUT_PRESETS[1];
-  const { cols, rows } = activeLayoutConfig;
+  const { cols, rows } = isSpecialLayout ? { cols: 3, rows: 3 } : activeLayoutConfig;
+  const maxSlots = isSpecialLayout ? 10 : cols * rows;
+
+  // Special layout geometry (memoized on pad/gap change)
+  const specialGeo = isSpecialLayout ? computeSpecialGeometry(padding, gap, cellAspectRatio) : null;
 
   // Compute cell dims & canvas height dynamically
-  const cellWidth = (CANVAS_WIDTH - 2 * padding - (cols - 1) * gap) / cols;
-  const cellHeight = cellWidth / cellAspectRatio;
-  const canvasHeight = Math.round(2 * padding + rows * cellHeight + (rows - 1) * gap);
+  const cellWidth = isSpecialLayout ? 0 : (CANVAS_WIDTH - 2 * padding - (cols - 1) * gap) / cols;
+  const cellHeight = isSpecialLayout ? 0 : cellWidth / cellAspectRatio;
+  const canvasHeight = isSpecialLayout
+    ? (specialGeo ? Math.round(specialGeo.topBannerH + 4 * specialGeo.rowH + 2 * padding + 4 * gap) : SPECIAL_CANVAS_H)
+    : Math.round(2 * padding + rows * cellHeight + (rows - 1) * gap);
 
   // Array of computed cells coordinates for rendering & hit testing
-  const computedCells = [];
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const idx = r * cols + c;
-      computedCells.push({
-        index: idx,
-        x: padding + c * (cellWidth + gap),
-        y: padding + r * (cellHeight + gap),
-        w: cellWidth,
-        h: cellHeight
-      });
-    }
-  }
+  const computedCells = isSpecialLayout
+    ? (specialGeo ? specialGeo.cells : [])
+    : (() => {
+        const cells = [];
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const idx = r * cols + c;
+            cells.push({
+              index: idx,
+              x: padding + c * (cellWidth + gap),
+              y: padding + r * (cellHeight + gap),
+              w: cellWidth,
+              h: cellHeight
+            });
+          }
+        }
+        return cells;
+      })();
 
   // Handle Delete key for selected texts
   useEffect(() => {
@@ -190,6 +289,7 @@ function App() {
           e.preventDefault();
           deleteSelectedText();
           showToast('Text overlay deleted. Ã°Å¸â€”â€˜Ã¯Â¸Â');
+          showToast('Text overlay deleted. 🗑️');
         }
       }
     };
@@ -205,8 +305,8 @@ function App() {
     const pad = padding * scaleFactor;
     const gp = gap * scaleFactor;
     const rad = borderRadius * scaleFactor;
-    const cWidth = (w - 2 * pad - (cols - 1) * gp) / cols;
-    const cHeight = cWidth / cellAspectRatio;
+    const cWidth = isSpecialLayout ? 0 : (w - 2 * pad - (cols - 1) * gp) / cols;
+    const cHeight = isSpecialLayout ? 0 : cWidth / cellAspectRatio;
 
     // 1. Draw Background
     let fillStyle;
@@ -230,6 +330,398 @@ function App() {
     }
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, w, h);
+
+    // ─────────────────────────────────────────────────────────
+    // SPECIAL LAYOUT BRANCH
+    // ─────────────────────────────────────────────────────────
+    if (isSpecialLayout && specialGeo) {
+      const sf = scaleFactor;
+      const geo = computeSpecialGeometry(padding * sf, gap * sf, cellAspectRatio);
+      const cellRad = borderRadius * sf;
+
+      // Helper: draw one photo cell
+      const drawPhotoCell = (cell, index) => {
+        const { x, y, w: cw, h: ch } = cell;
+        ctx.save();
+        drawRoundedRectPath(ctx, x, y, cw, ch, cellRad);
+        ctx.clip();
+        ctx.fillStyle = '#e8edf5';
+        ctx.fillRect(x, y, cw, ch);
+
+        const slotState = slots[index];
+        const imageInfo = slotState?.imageId ? uploadedImages[slotState.imageId] : null;
+
+        if (imageInfo && imageInfo.imgElement) {
+          const img = imageInfo.imgElement;
+          const coverScale = Math.max(cw / img.width, ch / img.height);
+          const finalScale = coverScale * (slotState.scale || 1.0);
+          const cx = x + cw / 2;
+          const cy = y + ch / 2;
+          ctx.save();
+          ctx.translate(cx + (slotState.xOffset || 0) * sf, cy + (slotState.yOffset || 0) * sf);
+          ctx.rotate(((slotState.rotation || 0) * Math.PI) / 180);
+          ctx.drawImage(img, -img.width * finalScale / 2, -img.height * finalScale / 2, img.width * finalScale, img.height * finalScale);
+          ctx.restore();
+        } else if (!isExporting) {
+          const isHov = hoveredSlotIndex === index;
+          ctx.strokeStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.12)';
+          ctx.lineWidth = 2 * sf;
+          ctx.setLineDash([6 * sf, 6 * sf]);
+          ctx.strokeRect(x + 4 * sf, y + 4 * sf, cw - 8 * sf, ch - 8 * sf);
+          ctx.setLineDash([]);
+          const cx = x + cw / 2;
+          const cy = y + ch / 2;
+          ctx.strokeStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.18)';
+          ctx.lineWidth = 2.5 * sf;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(cx - 12 * sf, cy); ctx.lineTo(cx + 12 * sf, cy);
+          ctx.moveTo(cx, cy - 12 * sf); ctx.lineTo(cx, cy + 12 * sf);
+          ctx.stroke();
+          ctx.fillStyle = isHov ? '#8b5cf6' : 'rgba(0,0,0,0.38)';
+          ctx.font = `600 ${Math.max(10, 11 * sf)}px Outfit, sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.fillText('Click to upload', cx, cy + 24 * sf);
+        }
+        ctx.restore();
+
+        // Active outline
+        if (!isExporting && activeSlotIndex === index) {
+          ctx.strokeStyle = '#8b5cf6';
+          ctx.lineWidth = 4 * sf;
+          ctx.strokeRect(x + 2 * sf, y + 2 * sf, cw - 4 * sf, ch - 4 * sf);
+        }
+      };
+
+      // Helper to draw decorative leaf
+      const drawLeaf = (cx, cy, size, angle, color = '#2d7a3a') => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate((angle * Math.PI) / 180);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(size / 2, -size / 3, size, 0);
+        ctx.quadraticCurveTo(size / 2, size / 3, 0, 0);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      };
+
+      // Draw all photo slots except cell 8 (which is inside the hero card and needs to be drawn on top of the hero background)
+      geo.cells.filter(cell => cell.index !== 8).forEach(cell => drawPhotoCell(cell, cell.index));
+
+      // ── Top Banner ──
+      const bn = geo.banner;
+      ctx.save();
+      // Green gradient banner
+      const bannerGrad = ctx.createLinearGradient(bn.x, bn.y, bn.x, bn.y + bn.h);
+      bannerGrad.addColorStop(0, '#1b6c2a');
+      bannerGrad.addColorStop(1, '#0e4a1c');
+      ctx.fillStyle = bannerGrad;
+      drawRoundedRectPath(ctx, bn.x, bn.y, bn.w, bn.h, cellRad);
+      ctx.fill();
+      // Leafy texture stripe
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.fillRect(bn.x, bn.y, bn.w, bn.h * 0.45);
+      // Banner text
+      ctx.fillStyle = '#ffffff';
+      const bannerFontSize = Math.max(18, Math.min(32, bn.h * 0.42)) * sf;
+      ctx.font = `700 ${bannerFontSize}px "Montserrat", "Outfit", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = 'rgba(0,0,0,0.4)';
+      ctx.shadowBlur = 4 * sf;
+      ctx.fillText(specialTexts.banner, bn.x + bn.w / 2, bn.y + bn.h / 2);
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // ── Hero Card (center) ──
+      const hr = geo.hero;
+      ctx.save();
+      // White background with subtle rounded border
+      drawRoundedRectPath(ctx, hr.x, hr.y, hr.w, hr.h, cellRad * 1.5);
+      ctx.fillStyle = '#ffffff'; // Solid white
+      ctx.fill();
+      // Thin green border
+      ctx.strokeStyle = '#2d7a3a';
+      ctx.lineWidth = 3 * sf;
+      ctx.stroke();
+      ctx.restore();
+
+      // ── Draw Photo Cell 8 (center building photo) ──
+      const cell8 = geo.cells.find(c => c.index === 8);
+      if (cell8) {
+        drawPhotoCell(cell8, 8);
+      }
+
+      // ── Leaf Ornaments ──
+      // Top-right of Center Card
+      drawLeaf(hr.x + hr.w - 5 * sf, hr.y - 5 * sf, 22 * sf, -35, '#2d7a3a');
+      drawLeaf(hr.x + hr.w - 8 * sf, hr.y - 2 * sf, 16 * sf, -75, '#47a058');
+
+      // Bottom-left corner of canvas
+      drawLeaf(20 * sf, h - 20 * sf, 55 * sf, -45, 'rgba(45, 122, 58, 0.45)');
+      drawLeaf(32 * sf, h - 12 * sf, 42 * sf, -75, 'rgba(71, 160, 88, 0.45)');
+      drawLeaf(12 * sf, h - 32 * sf, 38 * sf, -15, 'rgba(27, 108, 42, 0.45)');
+
+      // Bottom-right corner of canvas
+      drawLeaf(w - 20 * sf, h - 20 * sf, 55 * sf, -135, 'rgba(45, 122, 58, 0.45)');
+      drawLeaf(w - 32 * sf, h - 12 * sf, 42 * sf, -105, 'rgba(71, 160, 88, 0.45)');
+      drawLeaf(w - 12 * sf, h - 32 * sf, 38 * sf, -165, 'rgba(27, 108, 42, 0.45)');
+
+      // ── Hero Text (in top half) ──
+      // Hero title (large, bold, green)
+      ctx.save();
+      const heroTitleSize = Math.max(24, Math.min(52, hr.w * 0.16)) * sf;
+      ctx.font = `900 ${heroTitleSize}px "Outfit", "Montserrat", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#1a5c28';
+      ctx.shadowColor = 'rgba(0,0,0,0.1)';
+      ctx.shadowBlur = 3 * sf;
+      const titleY = hr.y + geo.rowH * 0.35;
+      ctx.fillText(specialTexts.heroTitle, hr.x + hr.w / 2, titleY);
+      ctx.shadowBlur = 0;
+
+      // Hero tagline green pill
+      const heroSubSize = Math.max(8, Math.min(14, hr.w * 0.045)) * sf;
+      ctx.font = `700 ${heroSubSize}px "Montserrat", "Outfit", sans-serif`;
+      const textW = ctx.measureText(specialTexts.heroSub).width;
+      const pillW = textW + 24 * sf;
+      const pillH = heroSubSize * 2.0;
+      const pillY = hr.y + geo.rowH * 0.58;
+
+      ctx.fillStyle = '#1a5c28'; // solid dark green
+      drawRoundedRectPath(ctx, hr.x + (hr.w - pillW) / 2, pillY - pillH / 2, pillW, pillH, pillH / 2);
+      ctx.fill();
+
+      // Tagline text inside pill
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(specialTexts.heroSub, hr.x + hr.w / 2, pillY);
+
+      // Hero Urdu text
+      const heroUrduSize = Math.max(12, Math.min(22, hr.w * 0.065)) * sf;
+      ctx.font = `600 ${heroUrduSize}px "Noto Nastaliq Urdu", "Amiri", serif`;
+      ctx.fillStyle = '#1a5c28';
+      ctx.direction = 'rtl';
+      ctx.fillText(specialTexts.heroUrdu, hr.x + hr.w / 2, hr.y + geo.rowH * 0.8);
+      ctx.direction = 'ltr';
+      ctx.restore();
+
+      // ── Bottom-Left Text Zone ──
+      const bl = geo.botLeft;
+      ctx.save();
+      drawRoundedRectPath(ctx, bl.x, bl.y, bl.w, bl.h, cellRad);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#2d7a3a';
+      ctx.lineWidth = 1.5 * sf;
+      ctx.stroke();
+      
+      // Text inside
+      const blLines = specialTexts.bottomLeft.split('\n');
+      const blFontSize = Math.max(10, Math.min(15, bl.h / (blLines.length + 1) * 0.8)) * sf;
+      ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
+      ctx.fillStyle = '#1a3a1a';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      const blLineH = bl.h / (blLines.length + 1);
+      
+      blLines.forEach((line, i) => {
+        if (i === 0) {
+          // Title
+          ctx.font = `800 ${blFontSize * 1.15}px "Montserrat", "Outfit", sans-serif`;
+          ctx.fillStyle = '#1a5c28';
+          ctx.fillText(line, bl.x + 18 * sf, bl.y + blLineH * 0.65);
+        } else {
+          // Items
+          ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
+          ctx.fillStyle = '#2d6e3a';
+          if (line.trim().startsWith('✓') || line.trim().startsWith('✔')) {
+            ctx.fillStyle = '#10b981'; // bright green checkmark
+            ctx.font = `800 ${blFontSize * 1.1}px "Outfit", sans-serif`;
+            ctx.fillText('✔', bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
+            ctx.fillStyle = '#1a3a1a';
+            ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
+            // Strip the symbol and leading space
+            const rawText = line.replace(/^[✓✔]/, '').trim();
+            ctx.fillText(rawText, bl.x + 34 * sf, bl.y + blLineH * (i + 0.65));
+          } else {
+            ctx.fillText(line, bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
+          }
+        }
+      });
+      ctx.restore();
+
+      // ── Bottom-Right Text Zone ──
+      const br = geo.botRight;
+      ctx.save();
+      drawRoundedRectPath(ctx, br.x, br.y, br.w, br.h, cellRad);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.strokeStyle = '#2d7a3a';
+      ctx.lineWidth = 1.5 * sf;
+      ctx.stroke();
+
+      // Parse lines
+      const brLines = specialTexts.bottomRight.split('\n');
+      const urduLines = brLines.filter(line => /[\u0600-\u06FF]/.test(line));
+      const engLines = brLines.filter(line => !/[\u0600-\u06FF]/.test(line));
+      const brFontSize = Math.max(9, Math.min(15, br.h * 0.09)) * sf;
+
+      // Draw Eco Icon on the left-center of the upper section
+      const iconX = br.x + br.w * 0.28;
+      const iconY = br.y + br.h * 0.36;
+      ctx.save();
+      ctx.strokeStyle = '#10b981';
+      ctx.fillStyle = '#10b981';
+      ctx.lineWidth = 2.5 * sf;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // 1. Draw Bin (trapezoid outline)
+      ctx.beginPath();
+      ctx.moveTo(iconX + 12 * sf, iconY + 5 * sf);
+      ctx.lineTo(iconX + 10 * sf, iconY + 18 * sf);
+      ctx.lineTo(iconX + 18 * sf, iconY + 18 * sf);
+      ctx.lineTo(iconX + 16 * sf, iconY + 5 * sf);
+      ctx.closePath();
+      ctx.stroke();
+
+      // 2. Draw Stick Figure
+      // Head
+      ctx.beginPath();
+      ctx.arc(iconX - 8 * sf, iconY - 8 * sf, 3.5 * sf, 0, Math.PI * 2);
+      ctx.fill();
+      // Body spine
+      ctx.beginPath();
+      ctx.moveTo(iconX - 8 * sf, iconY - 4.5 * sf);
+      ctx.lineTo(iconX - 8 * sf, iconY + 6 * sf);
+      ctx.stroke();
+      // Leg 1
+      ctx.beginPath();
+      ctx.moveTo(iconX - 8 * sf, iconY + 6 * sf);
+      ctx.lineTo(iconX - 12 * sf, iconY + 18 * sf);
+      ctx.stroke();
+      // Leg 2
+      ctx.beginPath();
+      ctx.moveTo(iconX - 8 * sf, iconY + 6 * sf);
+      ctx.lineTo(iconX - 6 * sf, iconY + 18 * sf);
+      ctx.stroke();
+      // Arm holding trash
+      ctx.beginPath();
+      ctx.moveTo(iconX - 8 * sf, iconY - 1 * sf);
+      ctx.lineTo(iconX - 1 * sf, iconY - 5 * sf);
+      ctx.lineTo(iconX + 4 * sf, iconY + 1 * sf);
+      ctx.stroke();
+      // Trash dot
+      ctx.beginPath();
+      ctx.arc(iconX + 7 * sf, iconY + 1 * sf, 1.5 * sf, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Draw Urdu Text on the right-center of the upper section
+      ctx.save();
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      const urduFontSize = brFontSize * 1.35;
+      ctx.font = `700 ${urduFontSize}px "Noto Nastaliq Urdu", "Amiri", serif`;
+      ctx.fillStyle = '#1a5c28';
+      ctx.direction = 'rtl';
+      
+      const urduY1 = br.y + br.h * 0.22;
+      const urduY2 = br.y + br.h * 0.48;
+      if (urduLines[0]) ctx.fillText(urduLines[0], br.x + br.w * 0.88, urduY1);
+      if (urduLines[1]) ctx.fillText(urduLines[1], br.x + br.w * 0.88, urduY2);
+      ctx.restore();
+
+      // Draw English text at the bottom
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const engFontSize = brFontSize * 1.05;
+      ctx.font = `800 ${engFontSize}px "Outfit", "Montserrat", sans-serif`;
+      ctx.fillStyle = '#0d2e0d';
+      
+      const engLineH = engFontSize * 1.25;
+      const engStartY = br.y + br.h * 0.76;
+      engLines.forEach((line, idx) => {
+        ctx.fillText(line, br.x + br.w / 2, engStartY + idx * engLineH);
+      });
+      ctx.restore();
+
+      ctx.restore();
+
+      // ── Free-floating text overlays (same as normal) ──
+      texts.forEach(txt => {
+        ctx.save();
+        const tx = txt.x * w;
+        const ty = txt.y * h;
+        const scaledFontSize = txt.fontSize * sf;
+        ctx.font = `${txt.bold ? 'bold ' : ''}${txt.italic ? 'italic ' : ''}${scaledFontSize}px "${txt.fontFamily}", Outfit, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const lines = txt.text.split('\n');
+        const lineH = scaledFontSize * 1.25;
+        let maxW = 0;
+        lines.forEach(l => { const lw = ctx.measureText(l).width; if (lw > maxW) maxW = lw; });
+        const blockH = lines.length * lineH;
+        ctx.translate(tx, ty);
+        ctx.rotate((txt.rotation * Math.PI) / 180);
+        ctx.globalAlpha = (txt.opacity ?? 100) / 100;
+        if (txt.bgEnabled) {
+          ctx.save();
+          ctx.globalAlpha = ((txt.bgOpacity ?? 80) / 100) * ((txt.opacity ?? 100) / 100);
+          const padAmt = (txt.padding || 10) * sf;
+          const bRad = (txt.borderRadius || 8) * sf;
+          const boxW = maxW + padAmt * 2; const boxH2 = blockH + padAmt * 2;
+          let bgSt = txt.bgType === 'gradient'
+            ? (() => { const g = ctx.createLinearGradient(-boxW/2,-boxH2/2,boxW/2,boxH2/2); g.addColorStop(0,txt.bgGradA||'#7c3aed'); g.addColorStop(1,txt.bgGradB||'#db2777'); return g; })()
+            : (txt.backgroundColor || '#000000');
+          ctx.fillStyle = bgSt;
+          drawRoundedRectPath(ctx, -boxW/2, -boxH2/2, boxW, boxH2, bRad);
+          ctx.fill();
+          ctx.restore();
+        }
+        if (txt.shadow) { ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=8*sf; ctx.shadowOffsetX=3*sf; ctx.shadowOffsetY=3*sf; }
+        let fst = txt.fillType === 'gradient'
+          ? (() => { const g = ctx.createLinearGradient(0,-blockH/2,0,blockH/2); g.addColorStop(0,txt.colorGradA||'#fff'); g.addColorStop(1,txt.colorGradB||'#38bdf8'); return g; })()
+          : (txt.color || '#ffffff');
+        const sw = txt.strokeWidth ?? 0;
+        if (sw > 0) {
+          ctx.save();
+          ctx.globalAlpha = ((txt.strokeOpacity??100)/100)*((txt.opacity??100)/100);
+          ctx.strokeStyle = txt.strokeType === 'gradient'
+            ? (() => { const g = ctx.createLinearGradient(0,-blockH/2,0,blockH/2); g.addColorStop(0,txt.strokeGradA||'#000'); g.addColorStop(1,txt.strokeGradB||'#333'); return g; })()
+            : (txt.strokeColor || '#000000');
+          ctx.lineWidth = sw * sf; ctx.lineJoin = 'round';
+          lines.forEach((line, i) => { ctx.strokeText(line, 0, -blockH/2+i*lineH+lineH/2); });
+          ctx.restore();
+        }
+        ctx.fillStyle = fst;
+        lines.forEach((line, i) => ctx.fillText(line, 0, -blockH/2+i*lineH+lineH/2));
+        if (!isExporting && selectedTextId === txt.id) {
+          ctx.save();
+          ctx.shadowColor='transparent'; ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+          ctx.globalAlpha=1;
+          const padAmt=(txt.padding||10)*sf; const boxW=maxW+padAmt*2; const boxH2=blockH+padAmt*2;
+          ctx.strokeStyle='#8b5cf6'; ctx.lineWidth=2*sf; ctx.setLineDash([5*sf,5*sf]);
+          ctx.strokeRect(-boxW/2,-boxH2/2,boxW,boxH2); ctx.setLineDash([]);
+          ctx.fillStyle='#ffffff'; ctx.strokeStyle='#8b5cf6'; ctx.lineWidth=2*sf;
+          const hs=8*sf;
+          [[-boxW/2,-boxH2/2],[boxW/2,-boxH2/2],[-boxW/2,boxH2/2],[boxW/2,boxH2/2]].forEach(([hx,hy]) => {
+            ctx.fillRect(hx-hs/2,hy-hs/2,hs,hs); ctx.strokeRect(hx-hs/2,hy-hs/2,hs,hs);
+          });
+          ctx.restore();
+        }
+        ctx.restore();
+      });
+
+      return; // special layout done
+    }
+    // ─────────────────────────────────────────────────────────
+    // END SPECIAL LAYOUT BRANCH — continue with regular grid below
+    // ─────────────────────────────────────────────────────────
 
     // 2. Draw Image Cells
     for (let r = 0; r < rows; r++) {
@@ -904,7 +1396,7 @@ function App() {
       // Load onto slot + sequential remaining slots
       let startSlot = cell.index;
       files.forEach((file, index) => {
-        if (startSlot < cols * rows) {
+        if (startSlot < maxSlots) {
           handleImageUpload(file, startSlot);
           startSlot++;
         }
@@ -912,7 +1404,7 @@ function App() {
     } else {
       // Find first empty slots sequentially
       let fileIdx = 0;
-      for (let i = 0; i < cols * rows; i++) {
+      for (let i = 0; i < maxSlots; i++) {
         if (!slots[i]?.imageId && fileIdx < files.length) {
           handleImageUpload(files[fileIdx], i);
           fileIdx++;
@@ -962,7 +1454,7 @@ function App() {
       // Upload specifically to selected slot, distribute others next
       let idx = activeSlotIndex;
       files.forEach(file => {
-        if (idx < cols * rows) {
+        if (idx < maxSlots) {
           handleImageUpload(file, idx);
           idx++;
         }
@@ -970,7 +1462,7 @@ function App() {
     } else {
       // Upload into empty slots sequentially
       let fileIdx = 0;
-      for (let i = 0; i < cols * rows; i++) {
+      for (let i = 0; i < maxSlots; i++) {
         if (!slots[i]?.imageId && fileIdx < files.length) {
           handleImageUpload(files[fileIdx], i);
           fileIdx++;
@@ -1303,35 +1795,121 @@ function App() {
                 ))}
               </div>
 
-              <div style={{ marginTop: '20px' }} className="control-group">
-                <div className="control-label">
-                  <span>Photo Frame Aspect Ratio</span>
-                </div>
-                <select 
-                  value={cellAspectRatio} 
-                  onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}
+              {/* ── Special Category ── */}
+              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
+                <Sparkles size={14} /> Special
+              </h2>
+              <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
+                <button
+                  id="special-layout-btn"
+                  className={`layout-card layout-card--special ${layout === SPECIAL_LAYOUT_ID ? 'active' : ''}`}
+                  onClick={() => {
+                    setLayout(SPECIAL_LAYOUT_ID);
+                    setActiveSlotIndex(null);
+                  }}
                 >
-                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Square Ã¢â€â‚¬Ã¢â€â‚¬">
-                    <option value={1.0}>Square (1:1)</option>
-                  </optgroup>
-                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Portrait Ã¢â€â‚¬Ã¢â€â‚¬">
-                    <option value={0.8}>Portrait (4:5)  Ã¢â‚¬â€ Instagram</option>
+                  <div className="layout-preview-icon layout-preview-special">
+                    <div className="lps-banner" />
+                    {/* Row 0: 4 slots */}
+                    <div className="lps-row">
+                      <div className="lps-cell" />
+                      <div className="lps-cell" />
+                      <div className="lps-cell" />
+                      <div className="lps-cell" />
+                    </div>
+                    {/* Row 1: left, hero-top, right */}
+                    <div className="lps-row">
+                      <div className="lps-cell" />
+                      <div className="lps-hero-top" />
+                      <div className="lps-cell" />
+                    </div>
+                    {/* Row 2: left, hero-bottom, right */}
+                    <div className="lps-row">
+                      <div className="lps-cell" />
+                      <div className="lps-hero-bot" />
+                      <div className="lps-cell" />
+                    </div>
+                    {/* Row 3: bottom-left text, center-tractor, bottom-right text */}
+                    <div className="lps-row">
+                      <div className="lps-bot" />
+                      <div className="lps-cell-wide" />
+                      <div className="lps-bot" />
+                    </div>
+                  </div>
+                  <span>City Bulletin</span>
+                </button>
+              </div>
+
+              {isSpecialLayout && (
+                <div className="special-text-controls animate-fade-in">
+                  <p className="special-hint">
+                    ✏️ Edit built-in text zones. Click photo slots on canvas to upload images.
+                  </p>
+                  <div className="control-group">
+                    <span className="control-label">🟢 Top Banner</span>
+                    <input type="text" value={specialTexts.banner}
+                      onChange={e => setSpecialTexts(p => ({ ...p, banner: e.target.value }))}
+                      placeholder="Tehsil Gujjar Khan, District Rawalpindi" />
+                  </div>
+                  <div className="control-group">
+                    <span className="control-label">⭐ Hero Title</span>
+                    <input type="text" value={specialTexts.heroTitle}
+                      onChange={e => setSpecialTexts(p => ({ ...p, heroTitle: e.target.value }))}
+                      placeholder="GUJJAR KHAN" />
+                  </div>
+                  <div className="control-group">
+                    <span className="control-label">Hero Subtitle</span>
+                    <input type="text" value={specialTexts.heroSub}
+                      onChange={e => setSpecialTexts(p => ({ ...p, heroSub: e.target.value }))}
+                      placeholder="CLEAN CITY • GREEN CITY • HEALTHY CITY" />
+                  </div>
+                  <div className="control-group">
+                    <span className="control-label">Hero Urdu / Arabic</span>
+                    <input type="text" value={specialTexts.heroUrdu}
+                      onChange={e => setSpecialTexts(p => ({ ...p, heroUrdu: e.target.value }))}
+                      placeholder="میرا شہر، میری ذمہ داری"
+                      dir="rtl" style={{ textAlign: 'right' }} />
+                  </div>
+                  <div className="control-group">
+                    <span className="control-label">📋 Bottom-Left Text</span>
+                    <textarea rows={5} className="text-edit-textarea"
+                      value={specialTexts.bottomLeft}
+                      onChange={e => setSpecialTexts(p => ({ ...p, bottomLeft: e.target.value }))}
+                      placeholder={"WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning"} />
+                  </div>
+                  <div className="control-group">
+                    <span className="control-label">📝 Bottom-Right Text</span>
+                    <textarea rows={4} className="text-edit-textarea"
+                      value={specialTexts.bottomRight}
+                      onChange={e => setSpecialTexts(p => ({ ...p, bottomRight: e.target.value }))}
+                      placeholder={"میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN"} />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ marginTop: '20px' }} className="control-group">
+                <div className="control-label"><span>Photo Frame Aspect Ratio</span></div>
+                <select value={cellAspectRatio} onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}>
+                  <optgroup label="── Square ──"><option value={1.0}>Square (1:1)</option></optgroup>
+                  <optgroup label="── Portrait ──">
+                    <option value={0.8}>Portrait (4:5) — Instagram</option>
                     <option value={0.75}>Portrait (3:4)</option>
                     <option value={0.67}>Tall Portrait (2:3)</option>
                     <option value={0.5625}>Story / Reel (9:16)</option>
                   </optgroup>
-                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Landscape Ã¢â€â‚¬Ã¢â€â‚¬">
+                  <optgroup label="── Landscape ──">
                     <option value={1.25}>Landscape (5:4)</option>
                     <option value={1.33}>Landscape (4:3)</option>
-                    <option value={1.5}>Landscape (3:2)  Ã¢â‚¬â€ DSLR</option>
-                    <option value={1.7778}>Widescreen (16:9)  Ã¢â‚¬â€ HD</option>
+                    <option value={1.5}>Landscape (3:2) — DSLR</option>
+                    <option value={1.7778}>Widescreen (16:9) — HD</option>
                     <option value={2.0}>Panorama (2:1)</option>
-                    <option value={2.3333}>Cinematic (21:9)  Ã¢â‚¬â€ Ultra-wide</option>
+                    <option value={2.3333}>Cinematic (21:9) — Ultra-wide</option>
                   </optgroup>
                 </select>
               </div>
             </div>
           )}
+
 
           {/* TAB 2: CANVAS DESIGN */}
           {activeTab === 'design' && (

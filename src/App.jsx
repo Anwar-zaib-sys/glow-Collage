@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   LayoutGrid, 
@@ -19,7 +19,11 @@ import {
   RotateCw,
   Sliders,
   Image as ImageIcon,
-  Clipboard
+  Clipboard,
+  ChevronDown,
+  Keyboard,
+  HelpCircle,
+  Copy
 } from 'lucide-react';
 import './App.css';
 
@@ -36,9 +40,9 @@ const LAYOUT_PRESETS = [
   { id: '4x3', name: '4 x 3 Grid',    cols: 4, rows: 3, type: 'grid-4x3', count: 12 },
 ];
 
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CUSTOM ASYMMETRIC LAYOUTS
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const CUSTOM_LAYOUTS = [
   { id: 'featured-left',  name: 'Featured Left',  previewClass: 'prev-featured-left',  slots: 3 },
   { id: 'featured-right', name: 'Featured Right', previewClass: 'prev-featured-right', slots: 3 },
@@ -118,7 +122,7 @@ const computeCustomGeo = (layoutId, pad, gp, W, aspectRatio = 1.0) => {
 
     case 'magazine-6': {
       // Left column: 1 tall cell spanning 2 rows
-      // Right area: 2 rows × 2 cells each
+      // Right area: 2 rows Ãƒâ€” 2 cells each
       const bigW = innerW * 0.45 - gp / 2;
       const smW  = (innerW * 0.55 - gp * 1.5) / 2;
       const smH  = rowH(smW);
@@ -172,9 +176,9 @@ const computeCustomCanvasHeight = (layoutId, pad, gp, W, aspectRatio) => {
 
 const CUSTOM_LAYOUT_IDS = CUSTOM_LAYOUTS.map(l => l.id);
 
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CUSTOM LAYOUT BUILDER
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const CUSTOM_BUILDER_ID = 'custom-builder';
 
 // Generate a full default grid for the builder
@@ -253,7 +257,7 @@ const mergeBuilderCells = (def, cellIndices) => {
   return { ...def, cells: [...remaining, merged] };
 };
 
-// Split a merged cell back into individual 1×1 cells. Returns new def or null if already 1×1.
+// Split a merged cell back into individual 1Ãƒâ€”1 cells. Returns new def or null if already 1Ãƒâ€”1.
 const splitBuilderCell = (def, cellIndex) => {
   const cells = def.cells || getBuilderDefaultCells(def.rows, def.cols);
   const cell = cells[cellIndex];
@@ -270,9 +274,9 @@ const splitBuilderCell = (def, cellIndex) => {
 
 // 8 photo slots (indices 0-7) arranged around a centre hero panel
 // Slot map:
-//   0  1  2        ← top row (3 photos)
-//   3  [C]  4      ← middle row sides (center = hero card)
-//   5  6  7        ← bottom row (3 photos)
+//   0  1  2        Ã¢â€ Â top row (3 photos)
+//   3  [C]  4      Ã¢â€ Â middle row sides (center = hero card)
+//   5  6  7        Ã¢â€ Â bottom row (3 photos)
 // Text zones: topBanner, centerHeroTitle/subtitle/urdu, bottomLeft, bottomRight
 const SPECIAL_CANVAS_W = 1200;
 const SPECIAL_CANVAS_H = 960;
@@ -389,9 +393,9 @@ const CANVAS_WIDTH = 1200; // Fixed width for editing resolution
 
 // Theme helpers
 const THEMES = [
-  { id: 'dark',      label: '🌙',  title: 'Dark Mode' },
-  { id: 'solarized', label: '☀️', title: 'Solarized Mode' },
-  { id: 'light',     label: '🔆', title: 'Light Mode' }
+  { id: 'dark',      label: 'Ã°Å¸Å’â„¢',  title: 'Dark Mode' },
+  { id: 'solarized', label: 'Ã¢Ëœâ‚¬Ã¯Â¸Â', title: 'Solarized Mode' },
+  { id: 'light',     label: 'Ã°Å¸â€â€ ', title: 'Light Mode' }
 ];
 
 function App() {
@@ -441,10 +445,10 @@ function App() {
   const [specialTexts, setSpecialTexts] = useState({
     banner:   'Your City Name, District / Region',
     heroTitle: 'CITY NAME',
-    heroSub:   'CLEAN CITY • GREEN CITY • HEALTHY CITY',
-    heroUrdu:  'میرا شہر، میری ذمہ داری',
-    bottomLeft: 'WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning\n✓ Waste Collection & Disposal\n✓ Efficient Waste Management\n✓ Chlorine Spraying\n✓ Ditch & Verge Cleaning',
-    bottomRight: 'میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN',
+    heroSub:   'CLEAN CITY Ã¢â‚¬Â¢ GREEN CITY Ã¢â‚¬Â¢ HEALTHY CITY',
+    heroUrdu:  'Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±Ã˜Å’ Ã™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’',
+    bottomLeft: 'WORKING FOR A BETTER CITY\nÃ¢Å“â€œ Regular Road Cleaning\nÃ¢Å“â€œ Waste Collection & Disposal\nÃ¢Å“â€œ Efficient Waste Management\nÃ¢Å“â€œ Chlorine Spraying\nÃ¢Å“â€œ Ditch & Verge Cleaning',
+    bottomRight: 'Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±\nÃ™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’\nKEEP YOUR CITY\nCLEAN & GREEN',
   });
 
   // Interaction / Drag-Pan-Zoom Tracker
@@ -461,7 +465,16 @@ function App() {
 
   const [hoveredSlotIndex, setHoveredSlotIndex] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [toastType, setToastType] = useState('success'); // 'success' | 'info' | 'warning'
+  const [toastExiting, setToastExiting] = useState(false);
   const [exportResolution, setExportResolution] = useState(2); // Export multiplier: 1x, 2x, 3x
+
+  // Accordion state for layout categories
+  const [openAccordions, setOpenAccordions] = useState({ grid: true, asymmetric: false, builder: false, special: false });
+  const toggleAccordion = (key) => setOpenAccordions(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // Keyboard shortcuts tooltip
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Custom Layout Builder state
   const [customLayoutDef, setCustomLayoutDef] = useState({ rows: 3, cols: 3, cells: null });
@@ -547,7 +560,7 @@ function App() {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           deleteSelectedText();
-          showToast('Text overlay deleted. 🗑️');
+          showToast('Text overlay deleted. Ã°Å¸â€”â€˜Ã¯Â¸Â');
         }
       }
     };
@@ -589,9 +602,9 @@ function App() {
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, w, h);
 
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // SPECIAL LAYOUT BRANCH
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     if (isSpecialLayout && specialGeo) {
       const sf = scaleFactor;
       const geo = computeSpecialGeometry(padding * sf, gap * sf, cellAspectRatio);
@@ -668,7 +681,7 @@ function App() {
       // Draw all photo slots except cell 8 (which is inside the hero card and needs to be drawn on top of the hero background)
       geo.cells.filter(cell => cell.index !== 8).forEach(cell => drawPhotoCell(cell, cell.index));
 
-      // ── Top Banner ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Top Banner Ã¢â€â‚¬Ã¢â€â‚¬
       const bn = geo.banner;
       ctx.save();
       // Green gradient banner
@@ -693,7 +706,7 @@ function App() {
       ctx.shadowBlur = 0;
       ctx.restore();
 
-      // ── Hero Card (center) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Hero Card (center) Ã¢â€â‚¬Ã¢â€â‚¬
       const hr = geo.hero;
       ctx.save();
       // White background with subtle rounded border
@@ -706,13 +719,13 @@ function App() {
       ctx.stroke();
       ctx.restore();
 
-      // ── Draw Photo Cell 8 (center building photo) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Draw Photo Cell 8 (center building photo) Ã¢â€â‚¬Ã¢â€â‚¬
       const cell8 = geo.cells.find(c => c.index === 8);
       if (cell8) {
         drawPhotoCell(cell8, 8);
       }
 
-      // ── Leaf Ornaments ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Leaf Ornaments Ã¢â€â‚¬Ã¢â€â‚¬
       // Top-right of Center Card
       drawLeaf(hr.x + hr.w - 5 * sf, hr.y - 5 * sf, 22 * sf, -35, '#2d7a3a');
       drawLeaf(hr.x + hr.w - 8 * sf, hr.y - 2 * sf, 16 * sf, -75, '#47a058');
@@ -727,7 +740,7 @@ function App() {
       drawLeaf(w - 32 * sf, h - 12 * sf, 42 * sf, -105, 'rgba(71, 160, 88, 0.45)');
       drawLeaf(w - 12 * sf, h - 32 * sf, 38 * sf, -165, 'rgba(27, 108, 42, 0.45)');
 
-      // ── Hero Text (in top half) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Hero Text (in top half) Ã¢â€â‚¬Ã¢â€â‚¬
       // Hero title (large, bold, green)
       ctx.save();
       const heroTitleSize = Math.max(24, Math.min(52, hr.w * 0.16)) * sf;
@@ -766,7 +779,7 @@ function App() {
       ctx.direction = 'ltr';
       ctx.restore();
 
-      // ── Bottom-Left Text Zone ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Bottom-Left Text Zone Ã¢â€â‚¬Ã¢â€â‚¬
       const bl = geo.botLeft;
       ctx.save();
       drawRoundedRectPath(ctx, bl.x, bl.y, bl.w, bl.h, cellRad);
@@ -795,14 +808,14 @@ function App() {
           // Items
           ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
           ctx.fillStyle = '#2d6e3a';
-          if (line.trim().startsWith('✓') || line.trim().startsWith('✔')) {
+          if (line.trim().startsWith('Ã¢Å“â€œ') || line.trim().startsWith('Ã¢Å“â€')) {
             ctx.fillStyle = '#10b981'; // bright green checkmark
             ctx.font = `800 ${blFontSize * 1.1}px "Outfit", sans-serif`;
-            ctx.fillText('✔', bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
+            ctx.fillText('Ã¢Å“â€', bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
             ctx.fillStyle = '#1a3a1a';
             ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
             // Strip the symbol and leading space
-            const rawText = line.replace(/^[✓✔]/, '').trim();
+            const rawText = line.replace(/^[Ã¢Å“â€œÃ¢Å“â€]/, '').trim();
             ctx.fillText(rawText, bl.x + 34 * sf, bl.y + blLineH * (i + 0.65));
           } else {
             ctx.fillText(line, bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
@@ -811,7 +824,7 @@ function App() {
       });
       ctx.restore();
 
-      // ── Bottom-Right Text Zone ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Bottom-Right Text Zone Ã¢â€â‚¬Ã¢â€â‚¬
       const br = geo.botRight;
       ctx.save();
       drawRoundedRectPath(ctx, br.x, br.y, br.w, br.h, cellRad);
@@ -910,7 +923,7 @@ function App() {
 
       ctx.restore();
 
-      // ── Free-floating text overlays (same as normal) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Free-floating text overlays (same as normal) Ã¢â€â‚¬Ã¢â€â‚¬
       texts.forEach(txt => {
         ctx.save();
         const tx = txt.x * w;
@@ -977,13 +990,13 @@ function App() {
 
       return; // special layout done
     }
-    // ─────────────────────────────────────────────────────────
-    // END SPECIAL LAYOUT BRANCH — continue with regular grid below
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // END SPECIAL LAYOUT BRANCH Ã¢â‚¬â€ continue with regular grid below
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // CUSTOM ASYMMETRIC & BUILDER LAYOUT BRANCH
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     if (isCustomLayout || isCustomBuilderLayout) {
       const sf = scaleFactor;
       const cells = isCustomBuilderLayout
@@ -1108,9 +1121,9 @@ function App() {
 
       return; // custom layout done
     }
-    // ─────────────────────────────────────────────────────────
-    // END CUSTOM LAYOUT BRANCH — continue with regular grid below
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // END CUSTOM LAYOUT BRANCH Ã¢â‚¬â€ continue with regular grid below
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     // 2. Draw Image Cells
 
@@ -2027,7 +2040,7 @@ function App() {
         colors: ['#8b5cf6', '#db2777', '#3b82f6', '#10b981']
       });
 
-      showToast('Collage downloaded successfully! 🎉');
+      showToast('Collage downloaded successfully! Ã°Å¸Å½â€°');
     }, 600);
   };
 
@@ -2063,7 +2076,7 @@ function App() {
             colors: ['#8b5cf6', '#db2777', '#10b981']
           });
           
-          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). 📋 🎉');
+          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). Ã°Å¸â€œâ€¹ Ã°Å¸Å½â€°');
         } catch (err) {
           console.error('Clipboard copy error:', err);
           showToast('Failed to write to clipboard. Try downloading.');
@@ -2075,22 +2088,64 @@ function App() {
     }
   };
 
-  const showToast = (message) => {
+  const showToast = (message, type = 'success') => {
+    setToastExiting(false);
+    setToastType(type);
     setToastMessage(message);
     setTimeout(() => {
-      setToastMessage(null);
-    }, 3000);
+      setToastExiting(true);
+      setTimeout(() => {
+        setToastMessage(null);
+        setToastExiting(false);
+      }, 250);
+    }, 2750);
   };
+
+  // Check if any images are loaded (for empty state)
+  const hasAnyImages = Object.keys(slots).some(k => slots[k]?.imageId);
+
+  // Range slider progress CSS variable updater
+  const getRangeProgress = (value, min, max) => {
+    return { '--range-progress': `${((value - min) / (max - min)) * 100}%` };
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleGlobalKeys = (e) => {
+      // Don't trigger in text inputs
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+
+      // Ctrl+E Ã¢â‚¬â€ Export
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        handleExport();
+      }
+      // Ctrl+Shift+C Ã¢â‚¬â€ Copy to Clipboard
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
+        e.preventDefault();
+        handleCopyCollage();
+      }
+      // Escape Ã¢â‚¬â€ Deselect
+      if (e.key === 'Escape') {
+        setSelectedTextId(null);
+        setActiveSlotIndex(null);
+        setShowShortcuts(false);
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, [exportResolution, canvasHeight]);
 
   const selectedText = selectedTextId ? texts.find(t => t.id === selectedTextId) : null;
 
   return (
     <div className="app-container">
-      {/* Toast Notification */}
+      {/* Enhanced Toast Notification */}
       {toastMessage && (
-        <div className="toast">
+        <div className={`toast toast--${toastType}${toastExiting ? ' toast--exiting' : ''}`}>
           <Check size={18} />
           <span>{toastMessage}</span>
+          <div className="toast-progress" />
         </div>
       )}
 
@@ -2163,394 +2218,410 @@ function App() {
           
           {/* TAB 1: LAYOUT CONFIG */}
           {activeTab === 'layout' && (
-            <div className="animate-fade-in control-group">
-              <h2 className="section-title">
-                <LayoutGrid size={14} /> Grid Template
-              </h2>
-              <div className="layout-presets">
-                {LAYOUT_PRESETS.map((preset) => (
-                  <button
-                    key={preset.id}
-                    className={`layout-card ${layout === preset.id ? 'active' : ''}`}
-                    onClick={() => {
-                      setLayout(preset.id);
-                      setActiveSlotIndex(null);
-                    }}
-                  >
-                    <div className={`layout-preview-icon ${preset.type}`}>
-                      {Array.from({ length: preset.count }).map((_, i) => (
-                        <div key={i} className="layout-preview-cell" />
-                      ))}
-                    </div>
-                    <span>{preset.name}</span>
-                  </button>
-                ))}
-              </div>
+            <div className="animate-fade-in control-group" style={{ gap: '10px' }}>
 
-              {/* ── Asymmetric Layouts ── */}
-              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
-                <LayoutGrid size={14} /> Asymmetric
-              </h2>
-              <div className="layout-presets">
-                {/* Featured Left: big left + 2 stacked right */}
-                <button
-                  id="layout-btn-featured-left"
-                  className={`layout-card ${layout === 'featured-left' ? 'active' : ''}`}
-                  onClick={() => { setLayout('featured-left'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-featured-left">
-                    <div className="prev-cell prev-big" />
-                    <div className="prev-col">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                  </div>
-                  <span>Featured Left</span>
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Grid Templates Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
+              <div className={`accordion-section${openAccordions.grid ? ' open' : ''}`}>
+                <button className="accordion-header" onClick={() => toggleAccordion('grid')}>
+                  <LayoutGrid size={14} />
+                  Grid Templates
+                  <span className="accordion-count">{LAYOUT_PRESETS.length}</span>
+                  <ChevronDown size={16} className="accordion-chevron" />
                 </button>
-
-                {/* Featured Right: 2 stacked left + big right */}
-                <button
-                  id="layout-btn-featured-right"
-                  className={`layout-card ${layout === 'featured-right' ? 'active' : ''}`}
-                  onClick={() => { setLayout('featured-right'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-featured-right">
-                    <div className="prev-col">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                    <div className="prev-cell prev-big" />
-                  </div>
-                  <span>Featured Right</span>
-                </button>
-
-                {/* Featured Top: wide top + 3 bottom */}
-                <button
-                  id="layout-btn-featured-top"
-                  className={`layout-card ${layout === 'featured-top' ? 'active' : ''}`}
-                  onClick={() => { setLayout('featured-top'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-featured-top">
-                    <div className="prev-cell prev-wide" />
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                  </div>
-                  <span>Featured Top</span>
-                </button>
-
-                {/* Magazine 5: 2 top + 3 bottom */}
-                <button
-                  id="layout-btn-magazine-5"
-                  className={`layout-card ${layout === 'magazine-5' ? 'active' : ''}`}
-                  onClick={() => { setLayout('magazine-5'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-magazine-5">
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                  </div>
-                  <span>Magazine 5</span>
-                </button>
-
-                {/* Magazine 6: tall left + 2x2 right + wide bottom */}
-                <button
-                  id="layout-btn-magazine-6"
-                  className={`layout-card ${layout === 'magazine-6' ? 'active' : ''}`}
-                  onClick={() => { setLayout('magazine-6'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-magazine-6">
-                    <div className="prev-cell prev-tall" />
-                    <div className="prev-col prev-col-2x2">
-                      <div className="prev-row">
-                        <div className="prev-cell" />
-                        <div className="prev-cell" />
-                      </div>
-                      <div className="prev-row">
-                        <div className="prev-cell" />
-                        <div className="prev-cell" />
-                      </div>
-                    </div>
-                  </div>
-                  <span>Magazine 6</span>
-                </button>
-
-                {/* Mosaic 7: big+med top, 3 mid, 2 bottom */}
-                <button
-                  id="layout-btn-mosaic-7"
-                  className={`layout-card ${layout === 'mosaic-7' ? 'active' : ''}`}
-                  onClick={() => { setLayout('mosaic-7'); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-mosaic-7">
-                    <div className="prev-row">
-                      <div className="prev-cell prev-big-h" />
-                      <div className="prev-cell prev-med-h" />
-                    </div>
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                  </div>
-                  <span>Mosaic 7</span>
-                </button>
-              </div>
-
-              {/* ── Custom Layout Builder ── */}
-              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
-                <Sliders size={14} /> Custom Builder
-              </h2>
-              <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
-                <button
-                  id="layout-btn-custom-builder"
-                  className={`layout-card layout-card--custom-btn ${layout === CUSTOM_BUILDER_ID ? 'active' : ''}`}
-                  onClick={() => { setLayout(CUSTOM_BUILDER_ID); setActiveSlotIndex(null); }}
-                >
-                  <div className="layout-preview-icon prev-custom-builder">
-                    <div className="prev-row" style={{ flex: 1.5 }}>
-                      <div className="prev-cell prev-big" />
-                      <div className="prev-col">
-                        <div className="prev-cell" />
-                        <div className="prev-cell" />
-                      </div>
-                    </div>
-                    <div className="prev-row">
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                      <div className="prev-cell" />
-                    </div>
-                  </div>
-                  <span>Design Your Own Layout</span>
-                </button>
-              </div>
-
-              {layout === CUSTOM_BUILDER_ID && (() => {
-                const { matrix, cells } = getBuilderMatrix(customLayoutDef);
-                const rendered = new Set();
-                const gridItems = [];
-                for (let r = 0; r < customLayoutDef.rows; r++) {
-                  for (let c = 0; c < customLayoutDef.cols; c++) {
-                    const cellIdx = matrix[r][c];
-                    if (cellIdx === -1 || rendered.has(cellIdx)) continue;
-                    rendered.add(cellIdx);
-                    const cell = cells[cellIdx];
-                    const isSel = selectedBuilderCells.has(cellIdx);
-                    const isMerged = cell.rowSpan > 1 || cell.colSpan > 1;
-                    gridItems.push(
-                      <div
-                        key={cellIdx}
-                        className={`cbl-cell${isSel ? ' selected' : ''}${isMerged ? ' merged' : ''}`}
-                        style={{
-                          gridColumn: `${cell.col + 1} / span ${cell.colSpan}`,
-                          gridRow: `${cell.row + 1} / span ${cell.rowSpan}`,
-                        }}
+                <div className="accordion-body">
+                  <div className="layout-presets">
+                    {LAYOUT_PRESETS.map((preset) => (
+                      <button
+                        key={preset.id}
+                        className={`layout-card ${layout === preset.id ? 'active' : ''}`}
                         onClick={() => {
-                          setSelectedBuilderCells(prev => {
-                            const next = new Set(prev);
-                            if (next.has(cellIdx)) next.delete(cellIdx); else next.add(cellIdx);
-                            return next;
-                          });
+                          setLayout(preset.id);
+                          setActiveSlotIndex(null);
                         }}
                       >
-                        <span className="cbl-slot-num">{cellIdx + 1}</span>
-                        {isMerged && <span className="cbl-merged-badge">⊞</span>}
-                      </div>
-                    );
-                  }
-                }
-
-                return (
-                  <div className="custom-builder-panel animate-fade-in">
-                    {/* Row / Col pickers */}
-                    <div className="cbp-dims">
-                      <div className="cbp-dim-group">
-                        <span className="cbp-dim-label">Rows</span>
-                        <div className="cbp-dim-btns">
-                          {[1,2,3,4,5,6].map(n => (
-                            <button key={n}
-                              className={`cbp-dim-btn${customLayoutDef.rows === n ? ' active' : ''}`}
-                              onClick={() => { setCustomLayoutDef({ rows: n, cols: customLayoutDef.cols, cells: null }); setSelectedBuilderCells(new Set()); }}
-                            >{n}</button>
+                        <div className={`layout-preview-icon ${preset.type}`}>
+                          {Array.from({ length: preset.count }).map((_, i) => (
+                            <div key={i} className="layout-preview-cell" />
                           ))}
                         </div>
-                      </div>
-                      <div className="cbp-dim-group">
-                        <span className="cbp-dim-label">Columns</span>
-                        <div className="cbp-dim-btns">
-                          {[1,2,3,4,5,6].map(n => (
-                            <button key={n}
-                              className={`cbp-dim-btn${customLayoutDef.cols === n ? ' active' : ''}`}
-                              onClick={() => { setCustomLayoutDef({ rows: customLayoutDef.rows, cols: n, cells: null }); setSelectedBuilderCells(new Set()); }}
-                            >{n}</button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Visual grid editor */}
-                    <div className="cbp-grid-editor">
-                      <div className="cbl-grid" style={{
-                        gridTemplateColumns: `repeat(${customLayoutDef.cols}, 1fr)`,
-                        gridTemplateRows: `repeat(${customLayoutDef.rows}, 1fr)`,
-                      }}>
-                        {gridItems}
-                      </div>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="cbp-actions">
-                      <button
-                        className="cbp-action-btn cbp-merge-btn"
-                        disabled={selectedBuilderCells.size < 2}
-                        onClick={() => {
-                          const newDef = mergeBuilderCells(customLayoutDef, selectedBuilderCells);
-                          if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
-                          else showToast('Select adjacent cells that form a complete rectangle to merge.');
-                        }}
-                      >⊞ Merge</button>
-                      <button
-                        className="cbp-action-btn cbp-split-btn"
-                        disabled={selectedBuilderCells.size !== 1}
-                        onClick={() => {
-                          const idx = Array.from(selectedBuilderCells)[0];
-                          const newDef = splitBuilderCell(customLayoutDef, idx);
-                          if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
-                          else showToast('Cell is already a single 1×1 slot.');
-                        }}
-                      >⊟ Split</button>
-                      <button
-                        className="cbp-action-btn cbp-reset-btn"
-                        onClick={() => { setCustomLayoutDef(d => ({ ...d, cells: null })); setSelectedBuilderCells(new Set()); }}
-                      >↺ Reset</button>
-                    </div>
-                    <p className="cbp-hint">Click cells to select · Select a rectangle then Merge · Click a merged cell then Split</p>
-                  </div>
-                );
-              })()}
-
-              {/* ── Special Category ── */}
-              <h2 className="section-title" style={{ marginTop: '20px', marginBottom: '10px' }}>
-                <Sparkles size={14} /> Special
-
-              </h2>
-              <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
-
-                <button
-                  id="special-layout-btn"
-                  className={`layout-card layout-card--special ${layout === SPECIAL_LAYOUT_ID ? 'active' : ''}`}
-                  onClick={() => {
-                    setLayout(SPECIAL_LAYOUT_ID);
-                    setActiveSlotIndex(null);
-                  }}
-                >
-                  <div className="layout-preview-icon layout-preview-special">
-                    <div className="lps-banner" />
-                    {/* Row 0: 4 slots */}
-                    <div className="lps-row">
-                      <div className="lps-cell" />
-                      <div className="lps-cell" />
-                      <div className="lps-cell" />
-                      <div className="lps-cell" />
-                    </div>
-                    {/* Row 1: left, hero-top, right */}
-                    <div className="lps-row">
-                      <div className="lps-cell" />
-                      <div className="lps-hero-top" />
-                      <div className="lps-cell" />
-                    </div>
-                    {/* Row 2: left, hero-bottom, right */}
-                    <div className="lps-row">
-                      <div className="lps-cell" />
-                      <div className="lps-hero-bot" />
-                      <div className="lps-cell" />
-                    </div>
-                    {/* Row 3: bottom-left text, center-tractor, bottom-right text */}
-                    <div className="lps-row">
-                      <div className="lps-bot" />
-                      <div className="lps-cell-wide" />
-                      <div className="lps-bot" />
-                    </div>
-                  </div>
-                  <span>City Bulletin</span>
-                </button>
-              </div>
-
-              {isSpecialLayout && (
-                <div className="special-text-controls animate-fade-in">
-                  <p className="special-hint">
-                    ✏️ Edit built-in text zones. Click photo slots on canvas to upload images.
-                  </p>
-                  <div className="control-group">
-                    <span className="control-label">🟢 Top Banner</span>
-                    <input type="text" value={specialTexts.banner}
-                      onChange={e => setSpecialTexts(p => ({ ...p, banner: e.target.value }))}
-                      placeholder="Tehsil Gujjar Khan, District Rawalpindi" />
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">⭐ Hero Title</span>
-                    <input type="text" value={specialTexts.heroTitle}
-                      onChange={e => setSpecialTexts(p => ({ ...p, heroTitle: e.target.value }))}
-                      placeholder="GUJJAR KHAN" />
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">Hero Subtitle</span>
-                    <input type="text" value={specialTexts.heroSub}
-                      onChange={e => setSpecialTexts(p => ({ ...p, heroSub: e.target.value }))}
-                      placeholder="CLEAN CITY • GREEN CITY • HEALTHY CITY" />
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">Hero Urdu / Arabic</span>
-                    <input type="text" value={specialTexts.heroUrdu}
-                      onChange={e => setSpecialTexts(p => ({ ...p, heroUrdu: e.target.value }))}
-                      placeholder="میرا شہر، میری ذمہ داری"
-                      dir="rtl" style={{ textAlign: 'right' }} />
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">📋 Bottom-Left Text</span>
-                    <textarea rows={5} className="text-edit-textarea"
-                      value={specialTexts.bottomLeft}
-                      onChange={e => setSpecialTexts(p => ({ ...p, bottomLeft: e.target.value }))}
-                      placeholder={"WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning"} />
-                  </div>
-                  <div className="control-group">
-                    <span className="control-label">📝 Bottom-Right Text</span>
-                    <textarea rows={4} className="text-edit-textarea"
-                      value={specialTexts.bottomRight}
-                      onChange={e => setSpecialTexts(p => ({ ...p, bottomRight: e.target.value }))}
-                      placeholder={"میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN"} />
+                        <span>{preset.name}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
-              )}
+              </div>
 
-              <div style={{ marginTop: '20px' }} className="control-group">
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Asymmetric Layouts Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
+              <div className={`accordion-section${openAccordions.asymmetric ? ' open' : ''}`}>
+                <button className="accordion-header" onClick={() => toggleAccordion('asymmetric')}>
+                  <LayoutGrid size={14} />
+                  Asymmetric
+                  <span className="accordion-count">6</span>
+                  <ChevronDown size={16} className="accordion-chevron" />
+                </button>
+                <div className="accordion-body">
+                  <div className="layout-presets">
+                    <button
+                      id="layout-btn-featured-left"
+                      className={`layout-card ${layout === 'featured-left' ? 'active' : ''}`}
+                      onClick={() => { setLayout('featured-left'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-featured-left">
+                        <div className="prev-cell prev-big" />
+                        <div className="prev-col">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                      </div>
+                      <span>Featured Left</span>
+                    </button>
+
+                    <button
+                      id="layout-btn-featured-right"
+                      className={`layout-card ${layout === 'featured-right' ? 'active' : ''}`}
+                      onClick={() => { setLayout('featured-right'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-featured-right">
+                        <div className="prev-col">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                        <div className="prev-cell prev-big" />
+                      </div>
+                      <span>Featured Right</span>
+                    </button>
+
+                    <button
+                      id="layout-btn-featured-top"
+                      className={`layout-card ${layout === 'featured-top' ? 'active' : ''}`}
+                      onClick={() => { setLayout('featured-top'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-featured-top">
+                        <div className="prev-cell prev-wide" />
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                      </div>
+                      <span>Featured Top</span>
+                    </button>
+
+                    <button
+                      id="layout-btn-magazine-5"
+                      className={`layout-card ${layout === 'magazine-5' ? 'active' : ''}`}
+                      onClick={() => { setLayout('magazine-5'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-magazine-5">
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                      </div>
+                      <span>Magazine 5</span>
+                    </button>
+
+                    <button
+                      id="layout-btn-magazine-6"
+                      className={`layout-card ${layout === 'magazine-6' ? 'active' : ''}`}
+                      onClick={() => { setLayout('magazine-6'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-magazine-6">
+                        <div className="prev-cell prev-tall" />
+                        <div className="prev-col prev-col-2x2">
+                          <div className="prev-row">
+                            <div className="prev-cell" />
+                            <div className="prev-cell" />
+                          </div>
+                          <div className="prev-row">
+                            <div className="prev-cell" />
+                            <div className="prev-cell" />
+                          </div>
+                        </div>
+                      </div>
+                      <span>Magazine 6</span>
+                    </button>
+
+                    <button
+                      id="layout-btn-mosaic-7"
+                      className={`layout-card ${layout === 'mosaic-7' ? 'active' : ''}`}
+                      onClick={() => { setLayout('mosaic-7'); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-mosaic-7">
+                        <div className="prev-row">
+                          <div className="prev-cell prev-big-h" />
+                          <div className="prev-cell prev-med-h" />
+                        </div>
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                      </div>
+                      <span>Mosaic 7</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Custom Layout Builder Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
+              <div className={`accordion-section${openAccordions.builder ? ' open' : ''}`}>
+                <button className="accordion-header" onClick={() => toggleAccordion('builder')}>
+                  <Sliders size={14} />
+                  Custom Builder
+                  <ChevronDown size={16} className="accordion-chevron" />
+                </button>
+                <div className="accordion-body">
+                  <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
+                    <button
+                      id="layout-btn-custom-builder"
+                      className={`layout-card layout-card--custom-btn ${layout === CUSTOM_BUILDER_ID ? 'active' : ''}`}
+                      onClick={() => { setLayout(CUSTOM_BUILDER_ID); setActiveSlotIndex(null); }}
+                    >
+                      <div className="layout-preview-icon prev-custom-builder">
+                        <div className="prev-row" style={{ flex: 1.5 }}>
+                          <div className="prev-cell prev-big" />
+                          <div className="prev-col">
+                            <div className="prev-cell" />
+                            <div className="prev-cell" />
+                          </div>
+                        </div>
+                        <div className="prev-row">
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                          <div className="prev-cell" />
+                        </div>
+                      </div>
+                      <span>Design Your Own Layout</span>
+                    </button>
+                  </div>
+
+                  {layout === CUSTOM_BUILDER_ID && (() => {
+                    const { matrix, cells } = getBuilderMatrix(customLayoutDef);
+                    const rendered = new Set();
+                    const gridItems = [];
+                    for (let r = 0; r < customLayoutDef.rows; r++) {
+                      for (let c = 0; c < customLayoutDef.cols; c++) {
+                        const cellIdx = matrix[r][c];
+                        if (cellIdx === -1 || rendered.has(cellIdx)) continue;
+                        rendered.add(cellIdx);
+                        const cell = cells[cellIdx];
+                        const isSel = selectedBuilderCells.has(cellIdx);
+                        const isMerged = cell.rowSpan > 1 || cell.colSpan > 1;
+                        gridItems.push(
+                          <div
+                            key={cellIdx}
+                            className={`cbl-cell${isSel ? ' selected' : ''}${isMerged ? ' merged' : ''}`}
+                            style={{
+                              gridColumn: `${cell.col + 1} / span ${cell.colSpan}`,
+                              gridRow: `${cell.row + 1} / span ${cell.rowSpan}`,
+                            }}
+                            onClick={() => {
+                              setSelectedBuilderCells(prev => {
+                                const next = new Set(prev);
+                                if (next.has(cellIdx)) next.delete(cellIdx); else next.add(cellIdx);
+                                return next;
+                              });
+                            }}
+                          >
+                            <span className="cbl-slot-num">{cellIdx + 1}</span>
+                            {isMerged && <span className="cbl-merged-badge">Ã¢Å Å¾</span>}
+                          </div>
+                        );
+                      }
+                    }
+
+                    return (
+                      <div className="custom-builder-panel animate-fade-in">
+                        <div className="cbp-dims">
+                          <div className="cbp-dim-group">
+                            <span className="cbp-dim-label">Rows</span>
+                            <div className="cbp-dim-btns">
+                              {[1,2,3,4,5,6].map(n => (
+                                <button key={n}
+                                  className={`cbp-dim-btn${customLayoutDef.rows === n ? ' active' : ''}`}
+                                  onClick={() => { setCustomLayoutDef({ rows: n, cols: customLayoutDef.cols, cells: null }); setSelectedBuilderCells(new Set()); }}
+                                >{n}</button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="cbp-dim-group">
+                            <span className="cbp-dim-label">Columns</span>
+                            <div className="cbp-dim-btns">
+                              {[1,2,3,4,5,6].map(n => (
+                                <button key={n}
+                                  className={`cbp-dim-btn${customLayoutDef.cols === n ? ' active' : ''}`}
+                                  onClick={() => { setCustomLayoutDef({ rows: customLayoutDef.rows, cols: n, cells: null }); setSelectedBuilderCells(new Set()); }}
+                                >{n}</button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="cbp-grid-editor">
+                          <div className="cbl-grid" style={{
+                            gridTemplateColumns: `repeat(${customLayoutDef.cols}, 1fr)`,
+                            gridTemplateRows: `repeat(${customLayoutDef.rows}, 1fr)`,
+                          }}>
+                            {gridItems}
+                          </div>
+                        </div>
+
+                        <div className="cbp-actions">
+                          <button
+                            className="cbp-action-btn cbp-merge-btn"
+                            disabled={selectedBuilderCells.size < 2}
+                            onClick={() => {
+                              const newDef = mergeBuilderCells(customLayoutDef, selectedBuilderCells);
+                              if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
+                              else showToast('Select adjacent cells that form a complete rectangle to merge.', 'warning');
+                            }}
+                          >Ã¢Å Å¾ Merge</button>
+                          <button
+                            className="cbp-action-btn cbp-split-btn"
+                            disabled={selectedBuilderCells.size !== 1}
+                            onClick={() => {
+                              const idx = Array.from(selectedBuilderCells)[0];
+                              const newDef = splitBuilderCell(customLayoutDef, idx);
+                              if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
+                              else showToast('Cell is already a single 1Ãƒâ€”1 slot.', 'info');
+                            }}
+                          >Ã¢Å Å¸ Split</button>
+                          <button
+                            className="cbp-action-btn cbp-reset-btn"
+                            onClick={() => { setCustomLayoutDef(d => ({ ...d, cells: null })); setSelectedBuilderCells(new Set()); }}
+                          >Ã¢â€ Âº Reset</button>
+                        </div>
+                        <p className="cbp-hint">Click cells to select Ã‚Â· Select a rectangle then Merge Ã‚Â· Click a merged cell then Split</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Special Category Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
+              <div className={`accordion-section${openAccordions.special ? ' open' : ''}`}>
+                <button className="accordion-header" onClick={() => toggleAccordion('special')}>
+                  <Sparkles size={14} />
+                  Special
+                  <span className="accordion-count">1</span>
+                  <ChevronDown size={16} className="accordion-chevron" />
+                </button>
+                <div className="accordion-body">
+                  <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
+                    <button
+                      id="special-layout-btn"
+                      className={`layout-card layout-card--special ${layout === SPECIAL_LAYOUT_ID ? 'active' : ''}`}
+                      onClick={() => {
+                        setLayout(SPECIAL_LAYOUT_ID);
+                        setActiveSlotIndex(null);
+                      }}
+                    >
+                      <div className="layout-preview-icon layout-preview-special">
+                        <div className="lps-banner" />
+                        <div className="lps-row">
+                          <div className="lps-cell" />
+                          <div className="lps-cell" />
+                          <div className="lps-cell" />
+                          <div className="lps-cell" />
+                        </div>
+                        <div className="lps-row">
+                          <div className="lps-cell" />
+                          <div className="lps-hero-top" />
+                          <div className="lps-cell" />
+                        </div>
+                        <div className="lps-row">
+                          <div className="lps-cell" />
+                          <div className="lps-hero-bot" />
+                          <div className="lps-cell" />
+                        </div>
+                        <div className="lps-row">
+                          <div className="lps-bot" />
+                          <div className="lps-cell-wide" />
+                          <div className="lps-bot" />
+                        </div>
+                      </div>
+                      <span>City Bulletin</span>
+                    </button>
+                  </div>
+
+                  {isSpecialLayout && (
+                    <div className="special-text-controls animate-fade-in">
+                      <p className="special-hint">
+                        Ã¢Å“ÂÃ¯Â¸Â Edit built-in text zones. Click photo slots on canvas to upload images.
+                      </p>
+                      <div className="control-group">
+                        <span className="control-label">Ã°Å¸Å¸Â¢ Top Banner</span>
+                        <input type="text" value={specialTexts.banner}
+                          onChange={e => setSpecialTexts(p => ({ ...p, banner: e.target.value }))}
+                          placeholder="Tehsil Gujjar Khan, District Rawalpindi" />
+                      </div>
+                      <div className="control-group">
+                        <span className="control-label">Ã¢Â­Â Hero Title</span>
+                        <input type="text" value={specialTexts.heroTitle}
+                          onChange={e => setSpecialTexts(p => ({ ...p, heroTitle: e.target.value }))}
+                          placeholder="GUJJAR KHAN" />
+                      </div>
+                      <div className="control-group">
+                        <span className="control-label">Hero Subtitle</span>
+                        <input type="text" value={specialTexts.heroSub}
+                          onChange={e => setSpecialTexts(p => ({ ...p, heroSub: e.target.value }))}
+                          placeholder="CLEAN CITY Ã¢â‚¬Â¢ GREEN CITY Ã¢â‚¬Â¢ HEALTHY CITY" />
+                      </div>
+                      <div className="control-group">
+                        <span className="control-label">Hero Urdu / Arabic</span>
+                        <input type="text" value={specialTexts.heroUrdu}
+                          onChange={e => setSpecialTexts(p => ({ ...p, heroUrdu: e.target.value }))}
+                          placeholder="Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±Ã˜Å’ Ã™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’"
+                          dir="rtl" style={{ textAlign: 'right' }} />
+                      </div>
+                      <div className="control-group">
+                        <span className="control-label">Ã°Å¸â€œâ€¹ Bottom-Left Text</span>
+                        <textarea rows={5} className="text-edit-textarea"
+                          value={specialTexts.bottomLeft}
+                          onChange={e => setSpecialTexts(p => ({ ...p, bottomLeft: e.target.value }))}
+                          placeholder={"WORKING FOR A BETTER CITY\nÃ¢Å“â€œ Regular Road Cleaning"} />
+                      </div>
+                      <div className="control-group">
+                        <span className="control-label">Ã°Å¸â€œÂ Bottom-Right Text</span>
+                        <textarea rows={4} className="text-edit-textarea"
+                          value={specialTexts.bottomRight}
+                          onChange={e => setSpecialTexts(p => ({ ...p, bottomRight: e.target.value }))}
+                          placeholder={"Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±\nÃ™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’\nKEEP YOUR CITY\nCLEAN & GREEN"} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <hr className="section-divider" />
+
+              <div className="control-group">
                 <div className="control-label"><span>Photo Frame Aspect Ratio</span></div>
                 <select value={cellAspectRatio} onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}>
-                  <optgroup label="── Square ──"><option value={1.0}>Square (1:1)</option></optgroup>
-                  <optgroup label="── Portrait ──">
-                    <option value={0.8}>Portrait (4:5) — Instagram</option>
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Square Ã¢â€â‚¬Ã¢â€â‚¬"><option value={1.0}>Square (1:1)</option></optgroup>
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Portrait Ã¢â€â‚¬Ã¢â€â‚¬">
+                    <option value={0.8}>Portrait (4:5) Ã¢â‚¬â€ Instagram</option>
                     <option value={0.75}>Portrait (3:4)</option>
                     <option value={0.67}>Tall Portrait (2:3)</option>
                     <option value={0.5625}>Story / Reel (9:16)</option>
                   </optgroup>
-                  <optgroup label="── Landscape ──">
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Landscape Ã¢â€â‚¬Ã¢â€â‚¬">
                     <option value={1.25}>Landscape (5:4)</option>
                     <option value={1.33}>Landscape (4:3)</option>
-                    <option value={1.5}>Landscape (3:2) — DSLR</option>
-                    <option value={1.7778}>Widescreen (16:9) — HD</option>
+                    <option value={1.5}>Landscape (3:2) Ã¢â‚¬â€ DSLR</option>
+                    <option value={1.7778}>Widescreen (16:9) Ã¢â‚¬â€ HD</option>
                     <option value={2.0}>Panorama (2:1)</option>
-                    <option value={2.3333}>Cinematic (21:9) — Ultra-wide</option>
+                    <option value={2.3333}>Cinematic (21:9) Ã¢â‚¬â€ Ultra-wide</option>
                   </optgroup>
                 </select>
               </div>
@@ -2730,7 +2801,7 @@ function App() {
                       <div className="control-group">
                         <div className="control-label">
                           <span>Image Rotation</span>
-                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}°</span>
+                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}Ã‚Â°</span>
                         </div>
                         <input 
                           type="range" 
@@ -3217,7 +3288,7 @@ function App() {
                     <div className="control-group">
                       <div className="control-label">
                         <span>Text Rotation</span>
-                        <span className="control-value">{selectedText.rotation}°</span>
+                        <span className="control-value">{selectedText.rotation}Ã‚Â°</span>
                       </div>
                       <input 
                         type="range" 
@@ -3275,11 +3346,56 @@ function App() {
 
       {/* Main Workspace (Canvas Viewer) */}
       <main className="workspace">
+        {/* Floating Quick-Action Toolbar */}
+        <div className="floating-toolbar animate-fade-in">
+          <button className="ft-btn ft-btn--hide-mobile-text" onClick={() => triggerFileInput(null)} title="Upload Photos">
+            <Upload size={15} /><span>Upload</span>
+          </button>
+          <button className="ft-btn ft-btn--hide-mobile-text" onClick={addText} title="Add Text Overlay">
+            <Type size={15} /><span>Text</span>
+          </button>
+          <div className="ft-divider" />
+          <button className="ft-btn ft-btn--hide-mobile-text" onClick={handleCopyCollage} title="Copy to Clipboard (Ctrl+Shift+C)">
+            <Copy size={15} /><span>Copy</span>
+          </button>
+          <button className="ft-btn ft-btn--export" onClick={handleExport} title="Export Collage (Ctrl+E)">
+            <Download size={15} /><span>Export</span>
+          </button>
+          <div className="ft-divider" />
+          <div style={{ position: 'relative' }}>
+            <button className="ft-btn" onClick={() => setShowShortcuts(v => !v)} title="Keyboard Shortcuts">
+              <Keyboard size={15} />
+            </button>
+            {showShortcuts && (
+              <div className="shortcuts-tooltip">
+                <h4>Keyboard Shortcuts</h4>
+                <div className="shortcut-row">
+                  <span>Export collage</span>
+                  <span className="shortcut-key"><kbd>Ctrl</kbd>+<kbd>E</kbd></span>
+                </div>
+                <div className="shortcut-row">
+                  <span>Copy to clipboard</span>
+                  <span className="shortcut-key"><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd></span>
+                </div>
+                <div className="shortcut-row">
+                  <span>Deselect all</span>
+                  <span className="shortcut-key"><kbd>Esc</kbd></span>
+                </div>
+                <div className="shortcut-row">
+                  <span>Delete selected text</span>
+                  <span className="shortcut-key"><kbd>Del</kbd></span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div 
           className="canvas-wrapper animate-fade-in"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
+          style={{ position: 'relative' }}
         >
           <canvas
             ref={canvasRef}
@@ -3295,14 +3411,29 @@ function App() {
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onDoubleClick={handleDoubleClick}
-            
             onTouchStart={handleMouseDown}
             onTouchMove={handleMouseMove}
             onTouchEnd={handleMouseUp}
             onWheel={handleWheel}
           />
 
-
+          {/* Empty State Overlay */}
+          {!hasAnyImages && (
+            <div className="empty-state-overlay">
+              <div className="empty-state-card">
+                <div className="empty-state-icon">
+                  <ImageIcon size={28} />
+                </div>
+                <h3 className="empty-state-title">Create Your Collage</h3>
+                <p className="empty-state-desc">
+                  Drop photos here, click any cell, or use the upload button to get started.
+                </p>
+                <button className="empty-state-btn" onClick={() => triggerFileInput(null)}>
+                  <Upload size={16} /> Upload Photos
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Copy Collage to Clipboard and Export buttons */}
@@ -3323,7 +3454,7 @@ function App() {
             ) : selectedTextId !== null ? (
               <b>Text selected: Drag to position, drag corner dots to resize font, press Delete to remove.</b>
             ) : (
-              "💡 Drag & drop pictures directly onto grids. Click frames/texts to configure them."
+              "\u{1F4A1} Drag & drop pictures directly onto grids. Click frames/texts to configure them."
             )}
           </span>
         </div>
@@ -3364,9 +3495,9 @@ function App() {
               value={exportResolution}
               onChange={(e) => setExportResolution(parseInt(e.target.value))}
             >
-              <option value={1}>Standard Web (1×)</option>
-              <option value={2}>High Definition (2× HD)</option>
-              <option value={3}>Print Quality (3× UHD)</option>
+              <option value={1}>Standard Web (1Ãƒâ€”)</option>
+              <option value={2}>High Definition (2Ãƒâ€” HD)</option>
+              <option value={3}>Print Quality (3Ãƒâ€” UHD)</option>
             </select>
           </div>
 
@@ -3378,7 +3509,7 @@ function App() {
                 className={`export-res-pill${exportResolution === r ? ' active' : ''}`}
                 onClick={() => setExportResolution(r)}
               >
-                {r === 1 ? '1× Web' : r === 2 ? '2× HD' : '3× UHD'}
+                {r === 1 ? '1Ãƒâ€” Web' : r === 2 ? '2Ãƒâ€” HD' : '3Ãƒâ€” UHD'}
               </button>
             ))}
           </div>

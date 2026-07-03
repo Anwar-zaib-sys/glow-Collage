@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+﻿import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { 
   LayoutGrid, 
@@ -40,9 +40,9 @@ const LAYOUT_PRESETS = [
   { id: '4x3', name: '4 x 3 Grid',    cols: 4, rows: 3, type: 'grid-4x3', count: 12 },
 ];
 
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CUSTOM ASYMMETRIC LAYOUTS
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const CUSTOM_LAYOUTS = [
   { id: 'featured-left',  name: 'Featured Left',  previewClass: 'prev-featured-left',  slots: 3 },
   { id: 'featured-right', name: 'Featured Right', previewClass: 'prev-featured-right', slots: 3 },
@@ -122,7 +122,7 @@ const computeCustomGeo = (layoutId, pad, gp, W, aspectRatio = 1.0) => {
 
     case 'magazine-6': {
       // Left column: 1 tall cell spanning 2 rows
-      // Right area: 2 rows × 2 cells each
+      // Right area: 2 rows Ãƒâ€” 2 cells each
       const bigW = innerW * 0.45 - gp / 2;
       const smW  = (innerW * 0.55 - gp * 1.5) / 2;
       const smH  = rowH(smW);
@@ -176,9 +176,9 @@ const computeCustomCanvasHeight = (layoutId, pad, gp, W, aspectRatio) => {
 
 const CUSTOM_LAYOUT_IDS = CUSTOM_LAYOUTS.map(l => l.id);
 
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 // CUSTOM LAYOUT BUILDER
-// ─────────────────────────────────────────────────────────
+// Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 const CUSTOM_BUILDER_ID = 'custom-builder';
 
 // Generate a full default grid for the builder
@@ -257,7 +257,7 @@ const mergeBuilderCells = (def, cellIndices) => {
   return { ...def, cells: [...remaining, merged] };
 };
 
-// Split a merged cell back into individual 1×1 cells. Returns new def or null if already 1×1.
+// Split a merged cell back into individual 1Ãƒâ€”1 cells. Returns new def or null if already 1Ãƒâ€”1.
 const splitBuilderCell = (def, cellIndex) => {
   const cells = def.cells || getBuilderDefaultCells(def.rows, def.cols);
   const cell = cells[cellIndex];
@@ -274,9 +274,9 @@ const splitBuilderCell = (def, cellIndex) => {
 
 // 8 photo slots (indices 0-7) arranged around a centre hero panel
 // Slot map:
-//   0  1  2        ← top row (3 photos)
-//   3  [C]  4      ← middle row sides (center = hero card)
-//   5  6  7        ← bottom row (3 photos)
+//   0  1  2        Ã¢â€ Â top row (3 photos)
+//   3  [C]  4      Ã¢â€ Â middle row sides (center = hero card)
+//   5  6  7        Ã¢â€ Â bottom row (3 photos)
 // Text zones: topBanner, centerHeroTitle/subtitle/urdu, bottomLeft, bottomRight
 const SPECIAL_CANVAS_W = 1200;
 const SPECIAL_CANVAS_H = 960;
@@ -393,9 +393,9 @@ const CANVAS_WIDTH = 1200; // Fixed width for editing resolution
 
 // Theme helpers
 const THEMES = [
-  { id: 'dark',      label: '🌙',  title: 'Dark Mode' },
-  { id: 'solarized', label: '☀️', title: 'Solarized Mode' },
-  { id: 'light',     label: '🔆', title: 'Light Mode' }
+  { id: 'dark',      label: 'Ã°Å¸Å’â„¢',  title: 'Dark Mode' },
+  { id: 'solarized', label: 'Ã¢Ëœâ‚¬Ã¯Â¸Â', title: 'Solarized Mode' },
+  { id: 'light',     label: 'Ã°Å¸â€â€ ', title: 'Light Mode' }
 ];
 
 function App() {
@@ -445,10 +445,10 @@ function App() {
   const [specialTexts, setSpecialTexts] = useState({
     banner:   'Your City Name, District / Region',
     heroTitle: 'CITY NAME',
-    heroSub:   'CLEAN CITY • GREEN CITY • HEALTHY CITY',
-    heroUrdu:  'میرا شہر، میری ذمہ داری',
-    bottomLeft: 'WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning\n✓ Waste Collection & Disposal\n✓ Efficient Waste Management\n✓ Chlorine Spraying\n✓ Ditch & Verge Cleaning',
-    bottomRight: 'میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN',
+    heroSub:   'CLEAN CITY Ã¢â‚¬Â¢ GREEN CITY Ã¢â‚¬Â¢ HEALTHY CITY',
+    heroUrdu:  'Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±Ã˜Å’ Ã™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’',
+    bottomLeft: 'WORKING FOR A BETTER CITY\nÃ¢Å“â€œ Regular Road Cleaning\nÃ¢Å“â€œ Waste Collection & Disposal\nÃ¢Å“â€œ Efficient Waste Management\nÃ¢Å“â€œ Chlorine Spraying\nÃ¢Å“â€œ Ditch & Verge Cleaning',
+    bottomRight: 'Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±\nÃ™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’\nKEEP YOUR CITY\nCLEAN & GREEN',
   });
 
   // Interaction / Drag-Pan-Zoom Tracker
@@ -560,7 +560,7 @@ function App() {
         if (e.key === 'Delete' || e.key === 'Backspace') {
           e.preventDefault();
           deleteSelectedText();
-          showToast('Text overlay deleted. 🗑️');
+          showToast('Text overlay deleted. Ã°Å¸â€”â€˜Ã¯Â¸Â');
         }
       }
     };
@@ -602,9 +602,9 @@ function App() {
     ctx.fillStyle = fillStyle;
     ctx.fillRect(0, 0, w, h);
 
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // SPECIAL LAYOUT BRANCH
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     if (isSpecialLayout && specialGeo) {
       const sf = scaleFactor;
       const geo = computeSpecialGeometry(padding * sf, gap * sf, cellAspectRatio);
@@ -681,7 +681,7 @@ function App() {
       // Draw all photo slots except cell 8 (which is inside the hero card and needs to be drawn on top of the hero background)
       geo.cells.filter(cell => cell.index !== 8).forEach(cell => drawPhotoCell(cell, cell.index));
 
-      // ── Top Banner ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Top Banner Ã¢â€â‚¬Ã¢â€â‚¬
       const bn = geo.banner;
       ctx.save();
       // Green gradient banner
@@ -706,7 +706,7 @@ function App() {
       ctx.shadowBlur = 0;
       ctx.restore();
 
-      // ── Hero Card (center) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Hero Card (center) Ã¢â€â‚¬Ã¢â€â‚¬
       const hr = geo.hero;
       ctx.save();
       // White background with subtle rounded border
@@ -719,13 +719,13 @@ function App() {
       ctx.stroke();
       ctx.restore();
 
-      // ── Draw Photo Cell 8 (center building photo) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Draw Photo Cell 8 (center building photo) Ã¢â€â‚¬Ã¢â€â‚¬
       const cell8 = geo.cells.find(c => c.index === 8);
       if (cell8) {
         drawPhotoCell(cell8, 8);
       }
 
-      // ── Leaf Ornaments ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Leaf Ornaments Ã¢â€â‚¬Ã¢â€â‚¬
       // Top-right of Center Card
       drawLeaf(hr.x + hr.w - 5 * sf, hr.y - 5 * sf, 22 * sf, -35, '#2d7a3a');
       drawLeaf(hr.x + hr.w - 8 * sf, hr.y - 2 * sf, 16 * sf, -75, '#47a058');
@@ -740,7 +740,7 @@ function App() {
       drawLeaf(w - 32 * sf, h - 12 * sf, 42 * sf, -105, 'rgba(71, 160, 88, 0.45)');
       drawLeaf(w - 12 * sf, h - 32 * sf, 38 * sf, -165, 'rgba(27, 108, 42, 0.45)');
 
-      // ── Hero Text (in top half) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Hero Text (in top half) Ã¢â€â‚¬Ã¢â€â‚¬
       // Hero title (large, bold, green)
       ctx.save();
       const heroTitleSize = Math.max(24, Math.min(52, hr.w * 0.16)) * sf;
@@ -779,7 +779,7 @@ function App() {
       ctx.direction = 'ltr';
       ctx.restore();
 
-      // ── Bottom-Left Text Zone ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Bottom-Left Text Zone Ã¢â€â‚¬Ã¢â€â‚¬
       const bl = geo.botLeft;
       ctx.save();
       drawRoundedRectPath(ctx, bl.x, bl.y, bl.w, bl.h, cellRad);
@@ -808,14 +808,14 @@ function App() {
           // Items
           ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
           ctx.fillStyle = '#2d6e3a';
-          if (line.trim().startsWith('✓') || line.trim().startsWith('✔')) {
+          if (line.trim().startsWith('Ã¢Å“â€œ') || line.trim().startsWith('Ã¢Å“â€')) {
             ctx.fillStyle = '#10b981'; // bright green checkmark
             ctx.font = `800 ${blFontSize * 1.1}px "Outfit", sans-serif`;
-            ctx.fillText('✔', bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
+            ctx.fillText('Ã¢Å“â€', bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
             ctx.fillStyle = '#1a3a1a';
             ctx.font = `600 ${blFontSize}px "Outfit", sans-serif`;
             // Strip the symbol and leading space
-            const rawText = line.replace(/^[✓✔]/, '').trim();
+            const rawText = line.replace(/^[Ã¢Å“â€œÃ¢Å“â€]/, '').trim();
             ctx.fillText(rawText, bl.x + 34 * sf, bl.y + blLineH * (i + 0.65));
           } else {
             ctx.fillText(line, bl.x + 18 * sf, bl.y + blLineH * (i + 0.65));
@@ -824,7 +824,7 @@ function App() {
       });
       ctx.restore();
 
-      // ── Bottom-Right Text Zone ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Bottom-Right Text Zone Ã¢â€â‚¬Ã¢â€â‚¬
       const br = geo.botRight;
       ctx.save();
       drawRoundedRectPath(ctx, br.x, br.y, br.w, br.h, cellRad);
@@ -923,7 +923,7 @@ function App() {
 
       ctx.restore();
 
-      // ── Free-floating text overlays (same as normal) ──
+      // Ã¢â€â‚¬Ã¢â€â‚¬ Free-floating text overlays (same as normal) Ã¢â€â‚¬Ã¢â€â‚¬
       texts.forEach(txt => {
         ctx.save();
         const tx = txt.x * w;
@@ -990,13 +990,13 @@ function App() {
 
       return; // special layout done
     }
-    // ─────────────────────────────────────────────────────────
-    // END SPECIAL LAYOUT BRANCH — continue with regular grid below
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // END SPECIAL LAYOUT BRANCH Ã¢â‚¬â€ continue with regular grid below
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     // CUSTOM ASYMMETRIC & BUILDER LAYOUT BRANCH
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     if (isCustomLayout || isCustomBuilderLayout) {
       const sf = scaleFactor;
       const cells = isCustomBuilderLayout
@@ -1121,9 +1121,9 @@ function App() {
 
       return; // custom layout done
     }
-    // ─────────────────────────────────────────────────────────
-    // END CUSTOM LAYOUT BRANCH — continue with regular grid below
-    // ─────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // END CUSTOM LAYOUT BRANCH Ã¢â‚¬â€ continue with regular grid below
+    // Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     // 2. Draw Image Cells
 
@@ -2040,7 +2040,7 @@ function App() {
         colors: ['#8b5cf6', '#db2777', '#3b82f6', '#10b981']
       });
 
-      showToast('Collage downloaded successfully! 🎉');
+      showToast('Collage downloaded successfully! Ã°Å¸Å½â€°');
     }, 600);
   };
 
@@ -2076,7 +2076,7 @@ function App() {
             colors: ['#8b5cf6', '#db2777', '#10b981']
           });
           
-          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). 📋 🎉');
+          showToast('Collage copied to clipboard! Paste it anywhere (Ctrl+V). Ã°Å¸â€œâ€¹ Ã°Å¸Å½â€°');
         } catch (err) {
           console.error('Clipboard copy error:', err);
           showToast('Failed to write to clipboard. Try downloading.');
@@ -2115,17 +2115,17 @@ function App() {
       // Don't trigger in text inputs
       if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA' || document.activeElement.isContentEditable) return;
 
-      // Ctrl+E — Export
+      // Ctrl+E Ã¢â‚¬â€ Export
       if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
         e.preventDefault();
         handleExport();
       }
-      // Ctrl+Shift+C — Copy to Clipboard
+      // Ctrl+Shift+C Ã¢â‚¬â€ Copy to Clipboard
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'C') {
         e.preventDefault();
         handleCopyCollage();
       }
-      // Escape — Deselect
+      // Escape Ã¢â‚¬â€ Deselect
       if (e.key === 'Escape') {
         setSelectedTextId(null);
         setActiveSlotIndex(null);
@@ -2220,7 +2220,7 @@ function App() {
           {activeTab === 'layout' && (
             <div className="animate-fade-in control-group" style={{ gap: '10px' }}>
 
-              {/* ── Grid Templates Accordion ── */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Grid Templates Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className={`accordion-section${openAccordions.grid ? ' open' : ''}`}>
                 <button className="accordion-header" onClick={() => toggleAccordion('grid')}>
                   <LayoutGrid size={14} />
@@ -2251,7 +2251,7 @@ function App() {
                 </div>
               </div>
 
-              {/* ── Asymmetric Layouts Accordion ── */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Asymmetric Layouts Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className={`accordion-section${openAccordions.asymmetric ? ' open' : ''}`}>
                 <button className="accordion-header" onClick={() => toggleAccordion('asymmetric')}>
                   <LayoutGrid size={14} />
@@ -2373,7 +2373,7 @@ function App() {
                 </div>
               </div>
 
-              {/* ── Custom Layout Builder Accordion ── */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Custom Layout Builder Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className={`accordion-section${openAccordions.builder ? ' open' : ''}`}>
                 <button className="accordion-header" onClick={() => toggleAccordion('builder')}>
                   <Sliders size={14} />
@@ -2434,7 +2434,7 @@ function App() {
                             }}
                           >
                             <span className="cbl-slot-num">{cellIdx + 1}</span>
-                            {isMerged && <span className="cbl-merged-badge">⊞</span>}
+                            {isMerged && <span className="cbl-merged-badge">Ã¢Å Å¾</span>}
                           </div>
                         );
                       }
@@ -2485,7 +2485,7 @@ function App() {
                               if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
                               else showToast('Select adjacent cells that form a complete rectangle to merge.', 'warning');
                             }}
-                          >⊞ Merge</button>
+                          >Ã¢Å Å¾ Merge</button>
                           <button
                             className="cbp-action-btn cbp-split-btn"
                             disabled={selectedBuilderCells.size !== 1}
@@ -2493,22 +2493,22 @@ function App() {
                               const idx = Array.from(selectedBuilderCells)[0];
                               const newDef = splitBuilderCell(customLayoutDef, idx);
                               if (newDef) { setCustomLayoutDef(newDef); setSelectedBuilderCells(new Set()); }
-                              else showToast('Cell is already a single 1×1 slot.', 'info');
+                              else showToast('Cell is already a single 1Ãƒâ€”1 slot.', 'info');
                             }}
-                          >⊟ Split</button>
+                          >Ã¢Å Å¸ Split</button>
                           <button
                             className="cbp-action-btn cbp-reset-btn"
                             onClick={() => { setCustomLayoutDef(d => ({ ...d, cells: null })); setSelectedBuilderCells(new Set()); }}
-                          >↺ Reset</button>
+                          >Ã¢â€ Âº Reset</button>
                         </div>
-                        <p className="cbp-hint">Click cells to select · Select a rectangle then Merge · Click a merged cell then Split</p>
+                        <p className="cbp-hint">Click cells to select Ã‚Â· Select a rectangle then Merge Ã‚Â· Click a merged cell then Split</p>
                       </div>
                     );
                   })()}
                 </div>
               </div>
 
-              {/* ── Special Category Accordion ── */}
+              {/* Ã¢â€â‚¬Ã¢â€â‚¬ Special Category Accordion Ã¢â€â‚¬Ã¢â€â‚¬ */}
               <div className={`accordion-section${openAccordions.special ? ' open' : ''}`}>
                 <button className="accordion-header" onClick={() => toggleAccordion('special')}>
                   <Sparkles size={14} />
@@ -2557,16 +2557,16 @@ function App() {
                   {isSpecialLayout && (
                     <div className="special-text-controls animate-fade-in">
                       <p className="special-hint">
-                        ✏️ Edit built-in text zones. Click photo slots on canvas to upload images.
+                        Ã¢Å“ÂÃ¯Â¸Â Edit built-in text zones. Click photo slots on canvas to upload images.
                       </p>
                       <div className="control-group">
-                        <span className="control-label">🟢 Top Banner</span>
+                        <span className="control-label">Ã°Å¸Å¸Â¢ Top Banner</span>
                         <input type="text" value={specialTexts.banner}
                           onChange={e => setSpecialTexts(p => ({ ...p, banner: e.target.value }))}
                           placeholder="Tehsil Gujjar Khan, District Rawalpindi" />
                       </div>
                       <div className="control-group">
-                        <span className="control-label">⭐ Hero Title</span>
+                        <span className="control-label">Ã¢Â­Â Hero Title</span>
                         <input type="text" value={specialTexts.heroTitle}
                           onChange={e => setSpecialTexts(p => ({ ...p, heroTitle: e.target.value }))}
                           placeholder="GUJJAR KHAN" />
@@ -2575,28 +2575,28 @@ function App() {
                         <span className="control-label">Hero Subtitle</span>
                         <input type="text" value={specialTexts.heroSub}
                           onChange={e => setSpecialTexts(p => ({ ...p, heroSub: e.target.value }))}
-                          placeholder="CLEAN CITY • GREEN CITY • HEALTHY CITY" />
+                          placeholder="CLEAN CITY Ã¢â‚¬Â¢ GREEN CITY Ã¢â‚¬Â¢ HEALTHY CITY" />
                       </div>
                       <div className="control-group">
                         <span className="control-label">Hero Urdu / Arabic</span>
                         <input type="text" value={specialTexts.heroUrdu}
                           onChange={e => setSpecialTexts(p => ({ ...p, heroUrdu: e.target.value }))}
-                          placeholder="میرا شہر، میری ذمہ داری"
+                          placeholder="Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±Ã˜Å’ Ã™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’"
                           dir="rtl" style={{ textAlign: 'right' }} />
                       </div>
                       <div className="control-group">
-                        <span className="control-label">📋 Bottom-Left Text</span>
+                        <span className="control-label">Ã°Å¸â€œâ€¹ Bottom-Left Text</span>
                         <textarea rows={5} className="text-edit-textarea"
                           value={specialTexts.bottomLeft}
                           onChange={e => setSpecialTexts(p => ({ ...p, bottomLeft: e.target.value }))}
-                          placeholder={"WORKING FOR A BETTER CITY\n✓ Regular Road Cleaning"} />
+                          placeholder={"WORKING FOR A BETTER CITY\nÃ¢Å“â€œ Regular Road Cleaning"} />
                       </div>
                       <div className="control-group">
-                        <span className="control-label">📝 Bottom-Right Text</span>
+                        <span className="control-label">Ã°Å¸â€œÂ Bottom-Right Text</span>
                         <textarea rows={4} className="text-edit-textarea"
                           value={specialTexts.bottomRight}
                           onChange={e => setSpecialTexts(p => ({ ...p, bottomRight: e.target.value }))}
-                          placeholder={"میرا شہر\nمیری ذمہ داری\nKEEP YOUR CITY\nCLEAN & GREEN"} />
+                          placeholder={"Ã™â€¦Ã›Å’Ã˜Â±Ã˜Â§ Ã˜Â´Ã›ÂÃ˜Â±\nÃ™â€¦Ã›Å’Ã˜Â±Ã›Å’ Ã˜Â°Ã™â€¦Ã›Â Ã˜Â¯Ã˜Â§Ã˜Â±Ã›Å’\nKEEP YOUR CITY\nCLEAN & GREEN"} />
                       </div>
                     </div>
                   )}
@@ -2608,20 +2608,20 @@ function App() {
               <div className="control-group">
                 <div className="control-label"><span>Photo Frame Aspect Ratio</span></div>
                 <select value={cellAspectRatio} onChange={(e) => setCellAspectRatio(parseFloat(e.target.value))}>
-                  <optgroup label="── Square ──"><option value={1.0}>Square (1:1)</option></optgroup>
-                  <optgroup label="── Portrait ──">
-                    <option value={0.8}>Portrait (4:5) — Instagram</option>
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Square Ã¢â€â‚¬Ã¢â€â‚¬"><option value={1.0}>Square (1:1)</option></optgroup>
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Portrait Ã¢â€â‚¬Ã¢â€â‚¬">
+                    <option value={0.8}>Portrait (4:5) Ã¢â‚¬â€ Instagram</option>
                     <option value={0.75}>Portrait (3:4)</option>
                     <option value={0.67}>Tall Portrait (2:3)</option>
                     <option value={0.5625}>Story / Reel (9:16)</option>
                   </optgroup>
-                  <optgroup label="── Landscape ──">
+                  <optgroup label="Ã¢â€â‚¬Ã¢â€â‚¬ Landscape Ã¢â€â‚¬Ã¢â€â‚¬">
                     <option value={1.25}>Landscape (5:4)</option>
                     <option value={1.33}>Landscape (4:3)</option>
-                    <option value={1.5}>Landscape (3:2) — DSLR</option>
-                    <option value={1.7778}>Widescreen (16:9) — HD</option>
+                    <option value={1.5}>Landscape (3:2) Ã¢â‚¬â€ DSLR</option>
+                    <option value={1.7778}>Widescreen (16:9) Ã¢â‚¬â€ HD</option>
                     <option value={2.0}>Panorama (2:1)</option>
-                    <option value={2.3333}>Cinematic (21:9) — Ultra-wide</option>
+                    <option value={2.3333}>Cinematic (21:9) Ã¢â‚¬â€ Ultra-wide</option>
                   </optgroup>
                 </select>
               </div>
@@ -2801,7 +2801,7 @@ function App() {
                       <div className="control-group">
                         <div className="control-label">
                           <span>Image Rotation</span>
-                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}°</span>
+                          <span className="control-value">{slots[activeSlotIndex].rotation || 0}Ã‚Â°</span>
                         </div>
                         <input 
                           type="range" 
@@ -3288,7 +3288,7 @@ function App() {
                     <div className="control-group">
                       <div className="control-label">
                         <span>Text Rotation</span>
-                        <span className="control-value">{selectedText.rotation}°</span>
+                        <span className="control-value">{selectedText.rotation}Ã‚Â°</span>
                       </div>
                       <input 
                         type="range" 
@@ -3495,9 +3495,9 @@ function App() {
               value={exportResolution}
               onChange={(e) => setExportResolution(parseInt(e.target.value))}
             >
-              <option value={1}>Standard Web (1×)</option>
-              <option value={2}>High Definition (2× HD)</option>
-              <option value={3}>Print Quality (3× UHD)</option>
+              <option value={1}>Standard Web (1Ãƒâ€”)</option>
+              <option value={2}>High Definition (2Ãƒâ€” HD)</option>
+              <option value={3}>Print Quality (3Ãƒâ€” UHD)</option>
             </select>
           </div>
 
@@ -3509,7 +3509,7 @@ function App() {
                 className={`export-res-pill${exportResolution === r ? ' active' : ''}`}
                 onClick={() => setExportResolution(r)}
               >
-                {r === 1 ? '1× Web' : r === 2 ? '2× HD' : '3× UHD'}
+                {r === 1 ? '1Ãƒâ€” Web' : r === 2 ? '2Ãƒâ€” HD' : '3Ãƒâ€” UHD'}
               </button>
             ))}
           </div>

@@ -23,9 +23,18 @@ import {
   ChevronDown,
   Keyboard,
   HelpCircle,
-  Copy
+  Copy,
+  Save,
+  Pencil
 } from 'lucide-react';
 import './App.css';
+import {
+  listDesigns,
+  getDesign,
+  putDesign,
+  deleteDesign,
+  createDesignId,
+} from './designStore';
 
 // Preset Grid Layouts
 const LAYOUT_PRESETS = [
@@ -473,12 +482,35 @@ function App() {
   const [openAccordions, setOpenAccordions] = useState({ grid: true, asymmetric: false, builder: false, special: false });
   const toggleAccordion = (key) => setOpenAccordions(prev => ({ ...prev, [key]: !prev[key] }));
 
+  // Load saved designs library on mount
+  useEffect(() => {
+    let cancelled = false;
+    listDesigns()
+      .then((list) => {
+        if (!cancelled) setSavedDesigns(list);
+      })
+      .catch((err) => {
+        console.error('Failed to load saved designs:', err);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   // Keyboard shortcuts tooltip
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   // Custom Layout Builder state
   const [customLayoutDef, setCustomLayoutDef] = useState({ rows: 3, cols: 3, cells: null });
   const [selectedBuilderCells, setSelectedBuilderCells] = useState(new Set());
+
+  // Saved custom designs library
+  const [savedDesigns, setSavedDesigns] = useState([]);
+  const [activeSavedDesignId, setActiveSavedDesignId] = useState(null);
+  const [designDirty, setDesignDirty] = useState(false);
+  const [saveModal, setSaveModal] = useState(null);
+  // saveModal: null | { mode: 'create'|'update'|'rename', name: string, designId?: string }
+  const [saveModalBusy, setSaveModalBusy] = useState(false);
+  const skipDirtyRef = useRef(false);
+  const isFirstDirtyEffect = useRef(true);
 
   // Refs
   const canvasRef = useRef(null);
@@ -2001,7 +2033,300 @@ function App() {
       setUploadedImages({});
       setActiveSlotIndex(null);
       setSelectedTextId(null);
+      setDesignDirty(true);
     }
+  };
+
+  const refreshSavedDesigns = async () => {
+    try {
+      const list = await listDesigns();
+      setSavedDesigns(list);
+    } catch (err) {
+      console.error('Failed to refresh saved designs:', err);
+      showToast('Could not refresh saved designs.', 'warning');
+    }
+  };
+
+  const markDesignClean = () => {
+    skipDirtyRef.current = true;
+    setDesignDirty(false);
+    // Absorb dirty-effect runs from batched hydrate/save state updates
+    window.setTimeout(() => {
+      skipDirtyRef.current = true;
+      setDesignDirty(false);
+    }, 0);
+  };
+
+  const buildDesignSnapshot = () => {
+    const images = {};
+    for (const [imageId, data] of Object.entries(uploadedImages)) {
+      if (!data?.src) continue;
+      images[imageId] = { src: data.src, name: data.name || 'image' };
+    }
+    const cleanSlots = {};
+    for (const [slotKey, slot] of Object.entries(slots)) {
+      if (!slot?.imageId) continue;
+      if (!images[slot.imageId]) continue;
+      cleanSlots[slotKey] = {
+        imageId: slot.imageId,
+        scale: slot.scale ?? 1,
+        xOffset: slot.xOffset ?? 0,
+        yOffset: slot.yOffset ?? 0,
+        rotation: slot.rotation ?? 0,
+      };
+    }
+    return {
+      layout: CUSTOM_BUILDER_ID,
+      customLayoutDef: {
+        rows: customLayoutDef.rows,
+        cols: customLayoutDef.cols,
+        cells: customLayoutDef.cells
+          ? customLayoutDef.cells.map((c) => ({ ...c }))
+          : null,
+      },
+      cellAspectRatio,
+      padding,
+      gap,
+      borderRadius,
+      bgType,
+      bgPresetIndex,
+      customSolidBg,
+      customGradA,
+      customGradB,
+      images,
+      slots: cleanSlots,
+      texts: texts.map((t) => ({ ...t })),
+    };
+  };
+
+  const loadImagesFromSnapshot = (images) => {
+    const entries = Object.entries(images || {});
+    if (entries.length === 0) return Promise.resolve({});
+
+    return Promise.all(
+      entries.map(
+        ([imageId, data]) =>
+          new Promise((resolve) => {
+            if (!data?.src) {
+              resolve(null);
+              return;
+            }
+            const img = new Image();
+            img.onload = () =>
+              resolve([imageId, { imgElement: img, src: data.src, name: data.name || 'image' }]);
+            img.onerror = () => resolve(null);
+            img.src = data.src;
+          })
+      )
+    ).then((results) => {
+      const loaded = {};
+      for (const item of results) {
+        if (!item) continue;
+        const [imageId, value] = item;
+        loaded[imageId] = value;
+      }
+      return loaded;
+    });
+  };
+
+  const captureDesignThumbnail = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || canvas.width === 0 || canvas.height === 0) return null;
+    try {
+      const maxW = 240;
+      const scale = Math.min(1, maxW / canvas.width);
+      const tw = Math.max(1, Math.round(canvas.width * scale));
+      const th = Math.max(1, Math.round(canvas.height * scale));
+      const thumb = document.createElement('canvas');
+      thumb.width = tw;
+      thumb.height = th;
+      const tctx = thumb.getContext('2d');
+      tctx.drawImage(canvas, 0, 0, tw, th);
+      return thumb.toDataURL('image/jpeg', 0.6);
+    } catch (err) {
+      console.error('Thumbnail capture failed:', err);
+      return null;
+    }
+  };
+
+  const hydrateDesign = async (snapshot) => {
+    if (!snapshot) return;
+    const loadedImages = await loadImagesFromSnapshot(snapshot.images);
+    const cleanSlots = {};
+    for (const [slotKey, slot] of Object.entries(snapshot.slots || {})) {
+      if (!slot?.imageId || !loadedImages[slot.imageId]) continue;
+      cleanSlots[slotKey] = {
+        imageId: slot.imageId,
+        scale: slot.scale ?? 1,
+        xOffset: slot.xOffset ?? 0,
+        yOffset: slot.yOffset ?? 0,
+        rotation: slot.rotation ?? 0,
+      };
+    }
+
+    markDesignClean();
+    setLayout(CUSTOM_BUILDER_ID);
+    setCustomLayoutDef(
+      snapshot.customLayoutDef
+        ? {
+            rows: snapshot.customLayoutDef.rows || 3,
+            cols: snapshot.customLayoutDef.cols || 3,
+            cells: snapshot.customLayoutDef.cells
+              ? snapshot.customLayoutDef.cells.map((c) => ({ ...c }))
+              : null,
+          }
+        : { rows: 3, cols: 3, cells: null }
+    );
+    setCellAspectRatio(snapshot.cellAspectRatio ?? 1);
+    setPadding(snapshot.padding ?? 25);
+    setGap(snapshot.gap ?? 16);
+    setBorderRadius(snapshot.borderRadius ?? 10);
+    setBgType(snapshot.bgType || 'preset');
+    setBgPresetIndex(snapshot.bgPresetIndex ?? 0);
+    setCustomSolidBg(snapshot.customSolidBg || '#1e293b');
+    setCustomGradA(snapshot.customGradA || '#7c3aed');
+    setCustomGradB(snapshot.customGradB || '#db2777');
+    setUploadedImages(loadedImages);
+    setSlots(cleanSlots);
+    setTexts(Array.isArray(snapshot.texts) ? snapshot.texts.map((t) => ({ ...t })) : []);
+    setActiveSlotIndex(null);
+    setSelectedTextId(null);
+    setSelectedBuilderCells(new Set());
+  };
+
+  const confirmDiscardIfDirty = () => {
+    if (!designDirty) return true;
+    return window.confirm(
+      'You have unsaved changes on the canvas. Load this design and discard current edits?'
+    );
+  };
+
+  const openSaveDesignModal = () => {
+    if (!isCustomBuilderLayout) {
+      showToast('Switch to Custom Builder to save a design.', 'info');
+      return;
+    }
+    if (activeSavedDesignId) {
+      const existing = savedDesigns.find((d) => d.id === activeSavedDesignId);
+      setSaveModal({
+        mode: 'update',
+        name: existing?.name || 'My Design',
+        designId: activeSavedDesignId,
+      });
+    } else {
+      setSaveModal({ mode: 'create', name: '' });
+    }
+  };
+
+  const persistDesignRecord = async ({ id, name, createdAt, isNew }) => {
+    const snapshot = buildDesignSnapshot();
+    const thumbnail = captureDesignThumbnail();
+    const now = Date.now();
+    const record = {
+      id,
+      name: name.trim(),
+      createdAt: createdAt || now,
+      updatedAt: now,
+      thumbnail,
+      snapshot,
+    };
+    await putDesign(record);
+    setActiveSavedDesignId(id);
+    markDesignClean();
+    await refreshSavedDesigns();
+    setOpenAccordions((prev) => ({ ...prev, special: true, builder: prev.builder }));
+    showToast(isNew ? `Design “${record.name}” saved!` : `Design “${record.name}” updated!`);
+  };
+
+  const handleSaveModalConfirm = async (asNew = false) => {
+    if (!saveModal) return;
+    const name = (saveModal.name || '').trim();
+    if (!name) {
+      showToast('Please enter a design name.', 'warning');
+      return;
+    }
+
+    setSaveModalBusy(true);
+    try {
+      if (saveModal.mode === 'rename' && saveModal.designId) {
+        const existing = await getDesign(saveModal.designId);
+        if (!existing) {
+          showToast('Design not found.', 'warning');
+          return;
+        }
+        await putDesign({ ...existing, name, updatedAt: Date.now() });
+        await refreshSavedDesigns();
+        showToast(`Renamed to “${name}”.`);
+        setSaveModal(null);
+        return;
+      }
+
+      if (saveModal.mode === 'update' && saveModal.designId && !asNew) {
+        const existing = await getDesign(saveModal.designId);
+        await persistDesignRecord({
+          id: saveModal.designId,
+          name,
+          createdAt: existing?.createdAt,
+          isNew: false,
+        });
+      } else {
+        await persistDesignRecord({
+          id: createDesignId(),
+          name,
+          isNew: true,
+        });
+      }
+      setSaveModal(null);
+    } catch (err) {
+      console.error('Save design failed:', err);
+      const msg = String(err?.name || err?.message || '');
+      if (/quota/i.test(msg)) {
+        showToast('Storage full — try fewer or smaller photos.', 'warning');
+      } else {
+        showToast('Could not save design. Please try again.', 'warning');
+      }
+    } finally {
+      setSaveModalBusy(false);
+    }
+  };
+
+  const handleLoadSavedDesign = async (id) => {
+    if (!confirmDiscardIfDirty()) return;
+    try {
+      const record = await getDesign(id);
+      if (!record?.snapshot) {
+        showToast('Design not found.', 'warning');
+        return;
+      }
+      await hydrateDesign(record.snapshot);
+      setActiveSavedDesignId(id);
+      markDesignClean();
+      showToast(`Loaded “${record.name}”.`, 'info');
+    } catch (err) {
+      console.error('Load design failed:', err);
+      showToast('Could not load design.', 'warning');
+    }
+  };
+
+  const handleDeleteSavedDesign = async (id, name) => {
+    if (!window.confirm(`Delete saved design “${name}”? This cannot be undone.`)) return;
+    try {
+      await deleteDesign(id);
+      if (activeSavedDesignId === id) setActiveSavedDesignId(null);
+      await refreshSavedDesigns();
+      showToast(`Deleted “${name}”.`, 'info');
+    } catch (err) {
+      console.error('Delete design failed:', err);
+      showToast('Could not delete design.', 'warning');
+    }
+  };
+
+  const openRenameDesignModal = (design) => {
+    setSaveModal({
+      mode: 'rename',
+      name: design.name,
+      designId: design.id,
+    });
   };
 
   // High-Resolution Export
@@ -2101,6 +2426,34 @@ function App() {
     }, 2750);
   };
 
+  // Track unsaved edits after load/save (skip first mount + programmatic hydrates)
+  useEffect(() => {
+    if (isFirstDirtyEffect.current) {
+      isFirstDirtyEffect.current = false;
+      return;
+    }
+    if (skipDirtyRef.current) {
+      skipDirtyRef.current = false;
+      return;
+    }
+    setDesignDirty(true);
+  }, [
+    layout,
+    customLayoutDef,
+    cellAspectRatio,
+    padding,
+    gap,
+    borderRadius,
+    bgType,
+    bgPresetIndex,
+    customSolidBg,
+    customGradA,
+    customGradB,
+    uploadedImages,
+    slots,
+    texts,
+  ]);
+
   // Check if any images are loaded (for empty state)
   const hasAnyImages = Object.keys(slots).some(k => slots[k]?.imageId);
 
@@ -2125,8 +2478,12 @@ function App() {
         e.preventDefault();
         handleCopyCollage();
       }
-      // Escape — Deselect
+      // Escape — Deselect / close modal
       if (e.key === 'Escape') {
+        if (saveModal) {
+          setSaveModal(null);
+          return;
+        }
         setSelectedTextId(null);
         setActiveSlotIndex(null);
         setShowShortcuts(false);
@@ -2134,7 +2491,7 @@ function App() {
     };
     window.addEventListener('keydown', handleGlobalKeys);
     return () => window.removeEventListener('keydown', handleGlobalKeys);
-  }, [exportResolution, canvasHeight]);
+  }, [exportResolution, canvasHeight, saveModal]);
 
   const selectedText = selectedTextId ? texts.find(t => t.id === selectedTextId) : null;
 
@@ -2146,6 +2503,96 @@ function App() {
           <Check size={18} />
           <span>{toastMessage}</span>
           <div className="toast-progress" />
+        </div>
+      )}
+
+      {saveModal && (
+        <div className="design-modal-overlay" onClick={() => !saveModalBusy && setSaveModal(null)}>
+          <div
+            className="design-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="design-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="design-modal-header">
+              <h2 id="design-modal-title">
+                {saveModal.mode === 'rename'
+                  ? 'Rename Design'
+                  : saveModal.mode === 'update'
+                    ? 'Update Design'
+                    : 'Save Design'}
+              </h2>
+              <button
+                type="button"
+                className="design-modal-close"
+                disabled={saveModalBusy}
+                onClick={() => setSaveModal(null)}
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="design-modal-hint">
+              {saveModal.mode === 'rename'
+                ? 'Choose a new name for this saved design.'
+                : 'Name this Custom Builder design. Layout, colors, texts, and photos will be preserved.'}
+            </p>
+            <label className="design-modal-label" htmlFor="design-name-input">
+              Design name
+            </label>
+            <input
+              id="design-name-input"
+              type="text"
+              className="design-modal-input"
+              value={saveModal.name}
+              autoFocus
+              disabled={saveModalBusy}
+              placeholder="e.g. Wedding Template"
+              onChange={(e) => setSaveModal((m) => (m ? { ...m, name: e.target.value } : m))}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !saveModalBusy) {
+                  e.preventDefault();
+                  handleSaveModalConfirm(false);
+                }
+                if (e.key === 'Escape' && !saveModalBusy) setSaveModal(null);
+              }}
+            />
+            <div className="design-modal-actions">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={saveModalBusy}
+                onClick={() => setSaveModal(null)}
+              >
+                Cancel
+              </button>
+              {saveModal.mode === 'update' && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={saveModalBusy}
+                  onClick={() => handleSaveModalConfirm(true)}
+                >
+                  Save as New
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={saveModalBusy}
+                onClick={() => handleSaveModalConfirm(false)}
+              >
+                {saveModalBusy
+                  ? 'Saving…'
+                  : saveModal.mode === 'rename'
+                    ? 'Rename'
+                    : saveModal.mode === 'update'
+                      ? 'Update'
+                      : 'Save'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -2237,6 +2684,7 @@ function App() {
                         onClick={() => {
                           setLayout(preset.id);
                           setActiveSlotIndex(null);
+                          setActiveSavedDesignId(null);
                         }}
                       >
                         <div className={`layout-preview-icon ${preset.type}`}>
@@ -2264,7 +2712,7 @@ function App() {
                     <button
                       id="layout-btn-featured-left"
                       className={`layout-card ${layout === 'featured-left' ? 'active' : ''}`}
-                      onClick={() => { setLayout('featured-left'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('featured-left'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-featured-left">
                         <div className="prev-cell prev-big" />
@@ -2279,7 +2727,7 @@ function App() {
                     <button
                       id="layout-btn-featured-right"
                       className={`layout-card ${layout === 'featured-right' ? 'active' : ''}`}
-                      onClick={() => { setLayout('featured-right'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('featured-right'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-featured-right">
                         <div className="prev-col">
@@ -2294,7 +2742,7 @@ function App() {
                     <button
                       id="layout-btn-featured-top"
                       className={`layout-card ${layout === 'featured-top' ? 'active' : ''}`}
-                      onClick={() => { setLayout('featured-top'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('featured-top'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-featured-top">
                         <div className="prev-cell prev-wide" />
@@ -2310,7 +2758,7 @@ function App() {
                     <button
                       id="layout-btn-magazine-5"
                       className={`layout-card ${layout === 'magazine-5' ? 'active' : ''}`}
-                      onClick={() => { setLayout('magazine-5'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('magazine-5'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-magazine-5">
                         <div className="prev-row">
@@ -2329,7 +2777,7 @@ function App() {
                     <button
                       id="layout-btn-magazine-6"
                       className={`layout-card ${layout === 'magazine-6' ? 'active' : ''}`}
-                      onClick={() => { setLayout('magazine-6'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('magazine-6'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-magazine-6">
                         <div className="prev-cell prev-tall" />
@@ -2350,7 +2798,7 @@ function App() {
                     <button
                       id="layout-btn-mosaic-7"
                       className={`layout-card ${layout === 'mosaic-7' ? 'active' : ''}`}
-                      onClick={() => { setLayout('mosaic-7'); setActiveSlotIndex(null); }}
+                      onClick={() => { setLayout('mosaic-7'); setActiveSlotIndex(null); setActiveSavedDesignId(null); }}
                     >
                       <div className="layout-preview-icon prev-mosaic-7">
                         <div className="prev-row">
@@ -2384,8 +2832,12 @@ function App() {
                   <div className="layout-presets" style={{ gridTemplateColumns: '1fr' }}>
                     <button
                       id="layout-btn-custom-builder"
-                      className={`layout-card layout-card--custom-btn ${layout === CUSTOM_BUILDER_ID ? 'active' : ''}`}
-                      onClick={() => { setLayout(CUSTOM_BUILDER_ID); setActiveSlotIndex(null); }}
+                      className={`layout-card layout-card--custom-btn ${layout === CUSTOM_BUILDER_ID && !activeSavedDesignId ? 'active' : ''}`}
+                      onClick={() => {
+                        setLayout(CUSTOM_BUILDER_ID);
+                        setActiveSlotIndex(null);
+                        setActiveSavedDesignId(null);
+                      }}
                     >
                       <div className="layout-preview-icon prev-custom-builder">
                         <div className="prev-row" style={{ flex: 1.5 }}>
@@ -2501,7 +2953,16 @@ function App() {
                             onClick={() => { setCustomLayoutDef(d => ({ ...d, cells: null })); setSelectedBuilderCells(new Set()); }}
                           >↺ Reset</button>
                         </div>
-                        <p className="cbp-hint">Click cells to select · Select a rectangle then Merge · Click a merged cell then Split</p>
+                        <button
+                          type="button"
+                          className="cbp-save-design-btn"
+                          onClick={openSaveDesignModal}
+                        >
+                          <Save size={14} />
+                          Save Design
+                          {designDirty && activeSavedDesignId ? <span className="cbp-dirty-dot" title="Unsaved changes" /> : null}
+                        </button>
+                        <p className="cbp-hint">Click cells to select · Select a rectangle then Merge · Click a merged cell then Split · Save to reuse from Special</p>
                       </div>
                     );
                   })()}
@@ -2513,7 +2974,7 @@ function App() {
                 <button className="accordion-header" onClick={() => toggleAccordion('special')}>
                   <Sparkles size={14} />
                   Special
-                  <span className="accordion-count">1</span>
+                  <span className="accordion-count">{1 + savedDesigns.length}</span>
                   <ChevronDown size={16} className="accordion-chevron" />
                 </button>
                 <div className="accordion-body">
@@ -2524,6 +2985,7 @@ function App() {
                       onClick={() => {
                         setLayout(SPECIAL_LAYOUT_ID);
                         setActiveSlotIndex(null);
+                        setActiveSavedDesignId(null);
                       }}
                     >
                       <div className="layout-preview-icon layout-preview-special">
@@ -2552,6 +3014,59 @@ function App() {
                       </div>
                       <span>City Bulletin</span>
                     </button>
+
+                    {savedDesigns.length > 0 && (
+                      <div className="saved-designs-label">Saved Designs</div>
+                    )}
+
+                    {savedDesigns.map((design) => (
+                      <div
+                        key={design.id}
+                        className={`layout-card layout-card--saved ${activeSavedDesignId === design.id ? 'active' : ''}`}
+                      >
+                        <button
+                          type="button"
+                          className="saved-design-main"
+                          onClick={() => handleLoadSavedDesign(design.id)}
+                          title={`Load “${design.name}”`}
+                        >
+                          <div className="saved-design-thumb">
+                            {design.thumbnail ? (
+                              <img src={design.thumbnail} alt="" />
+                            ) : (
+                              <div className="saved-design-thumb-fallback">
+                                <LayoutGrid size={18} />
+                              </div>
+                            )}
+                          </div>
+                          <span className="saved-design-name">{design.name}</span>
+                        </button>
+                        <div className="saved-design-actions">
+                          <button
+                            type="button"
+                            className="saved-design-icon-btn"
+                            title="Rename"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openRenameDesignModal(design);
+                            }}
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className="saved-design-icon-btn saved-design-icon-btn--danger"
+                            title="Delete"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSavedDesign(design.id, design.name);
+                            }}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                   {isSpecialLayout && (
